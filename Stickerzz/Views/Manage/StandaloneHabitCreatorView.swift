@@ -12,6 +12,12 @@ struct StandaloneHabitCreatorView: View {
     @State private var targetCount: Int = 1
     @State private var scheduledWeekdays: Set<Int> = []
     @State private var showEmojiPicker = false
+    @State private var reminderEnabled: Bool = false
+    @State private var reminderTime: Date = Self.defaultReminderTime
+
+    private static var defaultReminderTime: Date {
+        Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now)!
+    }
 
     private let weekdaySymbols = Calendar.current.veryShortWeekdaySymbols
 
@@ -37,6 +43,13 @@ struct StandaloneHabitCreatorView: View {
                     TextField("e.g. Stretch, Vitamins, Journaling…", text: $name)
                 }
 
+                Section("Reminder") {
+                    Toggle("Daily reminder", isOn: $reminderEnabled)
+                    if reminderEnabled {
+                        DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    }
+                }
+
                 Section("Frequency") {
                     Picker("Frequency", selection: $frequency) {
                         ForEach(FrequencyType.allCases, id: \.self) {
@@ -60,7 +73,11 @@ struct StandaloneHabitCreatorView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || emoji.isEmpty)
+                        .disabled(
+                            name.trimmingCharacters(in: .whitespaces).isEmpty ||
+                            emoji.isEmpty ||
+                            (frequency == .specificDays && scheduledWeekdays.isEmpty)
+                        )
                 }
             }
             .sheet(isPresented: $showEmojiPicker) {
@@ -92,12 +109,16 @@ struct StandaloneHabitCreatorView: View {
 
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
+        let cal = Calendar.current
         let group = HabitGroup(
             name: trimmed,
             colorHex: HabitGroup.paletteHexes[groups.count % HabitGroup.paletteHexes.count],
             sortOrder: groups.count,
             isStandalone: true
         )
+        group.reminderEnabled = reminderEnabled
+        group.reminderHour = cal.component(.hour, from: reminderTime)
+        group.reminderMinute = cal.component(.minute, from: reminderTime)
         context.insert(group)
 
         let habit = Habit(
@@ -111,6 +132,7 @@ struct StandaloneHabitCreatorView: View {
         habit.group = group
         context.insert(habit)
 
+        NotificationManager.shared.reschedule(for: group)
         dismiss()
     }
 }

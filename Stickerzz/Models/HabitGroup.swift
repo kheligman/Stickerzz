@@ -9,8 +9,11 @@ final class HabitGroup {
     @Relationship(deleteRule: .cascade, inverse: \Habit.group)
     var habits: [Habit] = []
 
-    // Default enables lightweight SwiftData migration
+    // Defaults enable lightweight SwiftData migration
     var isStandalone: Bool = false
+    var reminderEnabled: Bool = false
+    var reminderHour: Int = 8
+    var reminderMinute: Int = 0
 
     init(name: String, colorHex: String, sortOrder: Int = 0, isStandalone: Bool = false) {
         self.name = name

@@ -76,7 +76,10 @@ struct ManageView: View {
                 set: { if !$0 { groupToDelete = nil } }
             )) {
                 Button("Delete", role: .destructive) {
-                    if let g = groupToDelete { context.delete(g) }
+                    if let g = groupToDelete {
+                        NotificationManager.shared.cancel(for: g)
+                        context.delete(g)
+                    }
                     groupToDelete = nil
                 }
                 Button("Cancel", role: .cancel) { groupToDelete = nil }

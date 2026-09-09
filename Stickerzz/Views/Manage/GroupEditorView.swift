@@ -10,6 +10,12 @@ struct GroupEditorView: View {
 
     @State private var name: String = ""
     @State private var selectedHex: String = HabitGroup.paletteHexes[0]
+    @State private var reminderEnabled: Bool = false
+    @State private var reminderTime: Date = Self.defaultReminderTime
+
+    private static var defaultReminderTime: Date {
+        Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now)!
+    }
 
     var body: some View {
         NavigationStack {
@@ -35,6 +41,13 @@ struct GroupEditorView: View {
                     }
                     .padding(.vertical, 4)
                 }
+
+                Section("Reminder") {
+                    Toggle("Daily reminder", isOn: $reminderEnabled)
+                    if reminderEnabled {
+                        DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    }
+                }
             }
             .navigationTitle(existing == nil ? "New Routine" : "Edit Routine")
             .navigationBarTitleDisplayMode(.inline)
@@ -47,23 +60,39 @@ struct GroupEditorView: View {
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-            .onAppear {
-                if let g = existing {
-                    name = g.name
-                    selectedHex = g.colorHex
-                }
-            }
+            .onAppear { loadExisting() }
         }
+    }
+
+    private func loadExisting() {
+        guard let g = existing else { return }
+        name = g.name
+        selectedHex = g.colorHex
+        reminderEnabled = g.reminderEnabled
+        let cal = Calendar.current
+        reminderTime = cal.date(bySettingHour: g.reminderHour, minute: g.reminderMinute, second: 0, of: .now)!
     }
 
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
+        let cal = Calendar.current
+        let hour = cal.component(.hour, from: reminderTime)
+        let minute = cal.component(.minute, from: reminderTime)
+
         if let g = existing {
             g.name = trimmed
             g.colorHex = selectedHex
+            g.reminderEnabled = reminderEnabled
+            g.reminderHour = hour
+            g.reminderMinute = minute
+            NotificationManager.shared.reschedule(for: g)
         } else {
             let g = HabitGroup(name: trimmed, colorHex: selectedHex, sortOrder: groups.count)
+            g.reminderEnabled = reminderEnabled
+            g.reminderHour = hour
+            g.reminderMinute = minute
             context.insert(g)
+            NotificationManager.shared.reschedule(for: g)
         }
         dismiss()
     }
