@@ -7,6 +7,7 @@ struct StickerzzApp: App {
         WindowGroup {
             RootTabView()
                 .task { await NotificationManager.shared.requestPermission() }
+                .environment(PurchaseManager.shared)
         }
         .modelContainer(for: [HabitGroup.self, Habit.self, HabitCompletion.self])
     }

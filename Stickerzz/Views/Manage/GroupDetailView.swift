@@ -5,8 +5,11 @@ struct GroupDetailView: View {
     let group: HabitGroup
 
     @Environment(\.modelContext) private var context
+    @Environment(PurchaseManager.self) private var purchases
+
     @State private var showEditGroup = false
     @State private var showNewHabit = false
+    @State private var showPaywall = false
     @State private var editingHabit: Habit? = nil
 
     private var coreHabits: [Habit] { group.sortedHabits.filter { !$0.isLuxe } }
@@ -35,7 +38,13 @@ struct GroupDetailView: View {
         .navigationTitle(group.name)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showNewHabit = true } label: {
+                Button {
+                    if purchases.canAddHabitToRoutine(currentCount: group.habits.count) {
+                        showNewHabit = true
+                    } else {
+                        showPaywall = true
+                    }
+                } label: {
                     Image(systemName: "plus")
                 }
             }
@@ -51,6 +60,7 @@ struct GroupDetailView: View {
         .sheet(isPresented: $showEditGroup) { GroupEditorView(existing: group) }
         .sheet(isPresented: $showNewHabit) { HabitEditorView(group: group) }
         .sheet(item: $editingHabit) { HabitEditorView(group: group, existing: $0) }
+        .sheet(isPresented: $showPaywall) { PaywallView().environment(PurchaseManager.shared) }
     }
 
     @ViewBuilder

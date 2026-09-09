@@ -17,7 +17,7 @@ final class PurchaseManager {
     private let productID = "com.stickerzz.pro"
 
     private init() {
-        Task { await loadAndVerify() }
+        Task.detached(priority: .background) { await self.loadAndVerify() }
     }
 
     private func loadAndVerify() async {

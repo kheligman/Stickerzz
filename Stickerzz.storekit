@@ -1,0 +1,28 @@
+{
+  "identifier" : "StickerzzkitConfig",
+  "nonConsumableProducts" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "stickerzz_pro_001",
+      "localizations" : [
+        {
+          "description" : "Unlock unlimited habits and routines.",
+          "displayName" : "Stickerzz Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.stickerzz.pro",
+      "referenceName" : "Stickerzz Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_storeKitErrors" : []
+  },
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}

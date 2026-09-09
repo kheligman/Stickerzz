@@ -5,9 +5,12 @@ struct ManageView: View {
     @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
     @Environment(\.modelContext) private var context
 
+    @Environment(PurchaseManager.self) private var purchases
+
     @State private var showNewRoutine = false
     @State private var showNewHabit = false
     @State private var groupToDelete: HabitGroup? = nil
+    @State private var showPaywall = false
 
     private var routines: [HabitGroup]   { groups.filter { !$0.isStandalone } }
     private var standalone: [HabitGroup] { groups.filter { $0.isStandalone } }
@@ -58,10 +61,22 @@ struct ManageView: View {
                 ToolbarItem(placement: .navigationBarTrailing) { EditButton() }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
-                        Button { showNewRoutine = true } label: {
+                        Button {
+                            if purchases.canAddRoutine(currentCount: routines.count) {
+                                showNewRoutine = true
+                            } else {
+                                showPaywall = true
+                            }
+                        } label: {
                             Label("New Routine", systemImage: "list.bullet")
                         }
-                        Button { showNewHabit = true } label: {
+                        Button {
+                            if purchases.canAddStandalone(currentCount: standalone.count) {
+                                showNewHabit = true
+                            } else {
+                                showPaywall = true
+                            }
+                        } label: {
                             Label("New Habit", systemImage: "plus.circle")
                         }
                     } label: {
@@ -71,6 +86,7 @@ struct ManageView: View {
             }
             .sheet(isPresented: $showNewRoutine) { GroupEditorView() }
             .sheet(isPresented: $showNewHabit)   { StandaloneHabitCreatorView() }
+            .sheet(isPresented: $showPaywall)     { PaywallView().environment(PurchaseManager.shared) }
             .alert(deleteAlertTitle, isPresented: Binding(
                 get: { groupToDelete != nil },
                 set: { if !$0 { groupToDelete = nil } }
