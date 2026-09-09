@@ -158,7 +158,7 @@ struct CalendarView: View {
     private var groupFilterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                FilterChip(label: "All", color: .primary, isSelected: filter == .all) {
+                FilterChip(label: "All", color: .accent, isSelected: filter == .all) {
                     filter = .all
                 }
                 FilterChip(label: "✨ Luxe", color: .orange, isSelected: filter == .luxe) {

@@ -39,7 +39,7 @@ struct PaywallView: View {
     private var hero: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(hex: "#C5B9E0") ?? .purple, Color(hex: "#A8D5E2") ?? .blue],
+                colors: [Color.accent, Color.accent.opacity(0.6)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -144,7 +144,7 @@ struct PaywallView: View {
                 .frame(height: 54)
                 .background(
                     LinearGradient(
-                        colors: [Color(hex: "#C5B9E0") ?? .purple, Color(hex: "#A8D5E2") ?? .blue],
+                        colors: [Color.accent, Color.accent.opacity(0.7)],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),

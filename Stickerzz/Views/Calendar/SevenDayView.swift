@@ -106,7 +106,7 @@ private struct SevenDayColumn: View {
                     .font(.caption2.weight(isToday ? .bold : .regular))
                     .foregroundStyle(isToday ? .white : .primary)
                     .frame(width: 22, height: 22)
-                    .background(isToday ? Color.primary : .clear, in: Circle())
+                    .background(isToday ? Color.accent : .clear, in: Circle())
             }
 
             // Emojis

@@ -64,7 +64,7 @@ struct StreaksView: View {
     private var groupFilterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                FilterChip(label: "All", color: .primary, isSelected: selectedGroup == nil) {
+                FilterChip(label: "All", color: .accent, isSelected: selectedGroup == nil) {
                     selectedGroup = nil
                 }
                 ForEach(routineGroups) { group in
@@ -106,6 +106,7 @@ struct StreakCard: View {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\(current)")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(current > 0 ? Color.accent : Color(.systemGray3))
                     Image(systemName: "flame.fill")
                         .foregroundStyle(current > 0 ? .orange : Color(.systemGray3))
                         .font(.title3)

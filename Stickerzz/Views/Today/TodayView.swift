@@ -98,10 +98,11 @@ struct CircularProgress: View {
             Circle().stroke(Color(.systemGray5), lineWidth: 5)
             Circle()
                 .trim(from: 0, to: fraction)
-                .stroke(Color.primary, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .stroke(Color.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(fraction * 100))%")
                 .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Color.accent)
         }
     }
 }
@@ -144,7 +145,7 @@ struct StandaloneHabitCard: View {
     @ViewBuilder private var stateIcon: some View {
         switch state {
         case .none:    Image(systemName: "circle").foregroundStyle(Color(.systemGray3)).font(.title3)
-        case .done:    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.title3)
+        case .done:    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accent).font(.title3)
         case .skipped: Image(systemName: "minus.circle.fill").foregroundStyle(Color(.systemGray3)).font(.title3)
         }
     }

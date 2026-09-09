@@ -29,7 +29,7 @@ struct CalendarDayCell: View {
                         .font(.caption2.weight(isToday ? .bold : .regular))
                         .foregroundStyle(isToday ? .white : .primary)
                         .frame(width: 18, height: 18)
-                        .background(isToday ? Color.primary : .clear, in: Circle())
+                        .background(isToday ? Color.accent : .clear, in: Circle())
 
                     if isPerfectDay && !emojis.isEmpty {
                         Image(systemName: "sparkles")

@@ -2,6 +2,8 @@ import SwiftUI
 import Foundation
 
 extension Color {
+    static let accent = Color(hex: "#3B1F6E")!
+
     init?(hex: String) {
         var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.hasPrefix("#") { s = String(s.dropFirst()) }

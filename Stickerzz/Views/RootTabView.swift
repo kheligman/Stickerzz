@@ -15,6 +15,6 @@ struct RootTabView: View {
             ManageView()
                 .tabItem { Label("Manage", systemImage: "slider.horizontal.3") }
         }
-        .tint(.primary)
+        .tint(.accent)
     }
 }

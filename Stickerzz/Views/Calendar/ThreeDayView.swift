@@ -114,7 +114,7 @@ private struct ThreeDayColumn: View {
                     .font(.subheadline.weight(isToday ? .bold : .regular))
                     .foregroundStyle(isToday ? .white : .primary)
                     .frame(width: 30, height: 30)
-                    .background(isToday ? Color.primary : .clear, in: Circle())
+                    .background(isToday ? Color.accent : .clear, in: Circle())
             }
             .padding(.top, 10)
             .padding(.bottom, 10)

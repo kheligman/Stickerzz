@@ -49,7 +49,7 @@ struct RoutineCard: View {
                         Text(group.name).font(.headline)
                         Text(statsLabel)
                             .font(.caption)
-                            .foregroundStyle(allHandled ? .green : .secondary)
+                            .foregroundStyle(allHandled ? Color.accent : .secondary)
                     }
 
                     Spacer()
@@ -156,7 +156,7 @@ struct InlineHabitRow: View {
     @ViewBuilder private var stateIcon: some View {
         switch state {
         case .none:    Image(systemName: "circle").foregroundStyle(Color(.systemGray3)).font(.title3)
-        case .done:    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.title3)
+        case .done:    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accent).font(.title3)
         case .skipped: Image(systemName: "minus.circle.fill").foregroundStyle(Color(.systemGray3)).font(.title3)
         }
     }
