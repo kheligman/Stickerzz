@@ -35,9 +35,13 @@ struct GroupDetailView: View {
         .navigationTitle(group.name)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showNewHabit = true } label: {
+                    Image(systemName: "plus")
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button("Edit Routine") { showEditGroup = true }
-                    Button("Add Habit") { showNewHabit = true }
                     EditButton()
                 } label: {
                     Image(systemName: "ellipsis.circle")

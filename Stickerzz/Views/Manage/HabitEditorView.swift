@@ -104,6 +104,7 @@ struct HabitEditorView: View {
     }
 
     // Day-of-week toggles (S M T W T F S)
+    @ViewBuilder
     private var dayPicker: some View {
         HStack(spacing: 6) {
             ForEach(1...7, id: \.self) { weekday in

@@ -1,6 +1,7 @@
 import Testing
 import SwiftData
 @testable import Stickerzz
+import Foundation
 
 // MARK: - Daily Streak
 

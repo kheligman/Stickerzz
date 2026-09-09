@@ -9,7 +9,7 @@ struct ManageView: View {
     @State private var showNewHabit = false
     @State private var groupToDelete: HabitGroup? = nil
 
-    private var routines: [HabitGroup]  { groups.filter { !$0.isStandalone } }
+    private var routines: [HabitGroup]   { groups.filter { !$0.isStandalone } }
     private var standalone: [HabitGroup] { groups.filter { $0.isStandalone } }
 
     var body: some View {
@@ -89,16 +89,12 @@ struct ManageView: View {
                     if g.isStandalone {
                         Text("This habit and all its history will be permanently deleted.")
                     } else {
-                        Text("This will permanently delete "\(g.name)" and all \(habitCount) habit\(habitCount == 1 ? "" : "s") inside it.")
+                        let plural = habitCount == 1 ? "habit" : "habits"
+                        Text("All \(habitCount) \(plural) inside this routine will also be deleted. This cannot be undone.")
                     }
                 }
             }
         }
-    }
-
-    private var deleteAlertTitle: String {
-        guard let g = groupToDelete else { return "Delete?" }
-        return g.isStandalone ? "Delete "\(g.sortedHabits.first?.name ?? "Habit")"?" : "Delete "\(g.name)"?"
     }
 
     // MARK: - Rows
@@ -144,6 +140,13 @@ struct ManageView: View {
     }
 
     // MARK: - Helpers
+
+    private var deleteAlertTitle: String {
+        guard let g = groupToDelete else { return "Delete?" }
+        return g.isStandalone
+            ? "Delete \"\(g.sortedHabits.first?.name ?? "Habit")\"?"
+            : "Delete \"\(g.name)\"?"
+    }
 
     private func reorder(_ subset: [HabitGroup], from source: IndexSet, to destination: Int) {
         var all = groups

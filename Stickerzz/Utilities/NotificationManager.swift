@@ -1,4 +1,5 @@
 import UserNotifications
+import SwiftData
 
 @MainActor
 final class NotificationManager {
