@@ -55,13 +55,18 @@ struct ManageView: View {
                 if routines.isEmpty && standalone.isEmpty {
                     emptyState
                 }
+
+                #if DEBUG
+                Section("Developer") {
+                    Toggle("Pro Unlocked", isOn: Binding(
+                        get: { purchases.isPro },
+                        set: { _ in purchases.debugTogglePro() }
+                    ))
+                    .tint(.accent)
+                }
+                #endif
             }
             .navigationTitle("My Habits")
-            #if DEBUG
-            .onTapGesture(count: 3) {
-                purchases.debugTogglePro()
-            }
-            #endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) { EditButton() }
                 ToolbarItem(placement: .navigationBarTrailing) {

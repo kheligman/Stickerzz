@@ -125,7 +125,9 @@ struct InlineHabitRow: View {
     let date: Date
 
     @Environment(\.modelContext) private var context
+    @Environment(AppNavigation.self) private var navigation
 
+    private var streak: Int { StreakEngine.currentStreak(for: habit) }
     private enum ToggleState { case none, done, skipped }
 
     private var state: ToggleState {
@@ -146,6 +148,13 @@ struct InlineHabitRow: View {
 
                 Spacer()
 
+                if streak > 0 {
+                    Button { navigation.showCalendar(filteredTo: habit) } label: {
+                        streakBadge(streak)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 stateIcon
             }
             .padding(.horizontal, 16)
@@ -153,6 +162,20 @@ struct InlineHabitRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func streakBadge(_ count: Int) -> some View {
+        HStack(spacing: 3) {
+            Text("\(count)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.accent)
+            Image(systemName: "flame.fill")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(Color.accent.opacity(0.08), in: Capsule())
     }
 
     @ViewBuilder private var stateIcon: some View {

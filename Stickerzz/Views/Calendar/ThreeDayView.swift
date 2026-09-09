@@ -74,9 +74,10 @@ private struct ThreeDayPage: View {
 
     private func matchesFilter(_ c: HabitCompletion) -> Bool {
         switch filter {
-        case .all:           return true
-        case .luxe:          return c.habit?.isLuxe == true
-        case .group(let id): return c.habit?.group?.id == id
+        case .all:            return true
+        case .luxe:           return c.habit?.isLuxe == true
+        case .group(let id):  return c.habit?.group?.id == id
+        case .habit(let id):  return c.habit?.persistentModelID == id
         }
     }
 }

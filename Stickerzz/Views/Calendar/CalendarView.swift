@@ -11,6 +11,7 @@ enum CalendarFilter: Equatable {
     case all
     case group(PersistentIdentifier)
     case luxe
+    case habit(PersistentIdentifier)
 }
 
 struct CalendarView: View {
@@ -28,9 +29,16 @@ struct CalendarView: View {
     private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
 
+    @Environment(AppNavigation.self) private var navigation
+
     private var selectedGroup: HabitGroup? {
         guard case .group(let id) = filter else { return nil }
         return groups.first { $0.id == id }
+    }
+
+    private var habitForFilter: Habit? {
+        guard case .habit(let id) = filter else { return nil }
+        return groups.flatMap { $0.habits }.first { $0.persistentModelID == id }
     }
 
     private var isShowingToday: Bool {
@@ -109,10 +117,11 @@ struct CalendarView: View {
             }
         }
         .onChange(of: viewMode) { _, _ in
-            // Reset to today when switching modes
             sevenDayPage = 1000
             threeDayPage = 1000
         }
+        .onAppear { applyPendingFilter() }
+        .onChange(of: navigation.pendingCalendarFilter) { _, _ in applyPendingFilter() }
     }
 
     // MARK: - Month Navigator
@@ -161,16 +170,23 @@ struct CalendarView: View {
                 FilterChip(label: "All", color: .accent, isSelected: filter == .all) {
                     filter = .all
                 }
-                FilterChip(label: "✨ Luxe", color: .orange, isSelected: filter == .luxe) {
-                    filter = (filter == .luxe) ? .all : .luxe
-                }
-                ForEach(groups) { group in
-                    FilterChip(
-                        label: group.name,
-                        color: group.color,
-                        isSelected: filter == .group(group.id)
-                    ) {
-                        filter = (filter == .group(group.id)) ? .all : .group(group.id)
+
+                if let habit = habitForFilter {
+                    FilterChip(label: "\(habit.emoji) \(habit.name)", color: .accent, isSelected: true) {
+                        filter = .all
+                    }
+                } else {
+                    FilterChip(label: "✨ Luxe", color: .orange, isSelected: filter == .luxe) {
+                        filter = (filter == .luxe) ? .all : .luxe
+                    }
+                    ForEach(groups) { group in
+                        FilterChip(
+                            label: group.name,
+                            color: group.color,
+                            isSelected: filter == .group(group.id)
+                        ) {
+                            filter = (filter == .group(group.id)) ? .all : .group(group.id)
+                        }
                     }
                 }
             }
@@ -240,10 +256,18 @@ struct CalendarView: View {
         case .all:            return true
         case .luxe:           return c.habit?.isLuxe == true
         case .group(let id):  return c.habit?.group?.id == id
+        case .habit(let id):  return c.habit?.persistentModelID == id
         }
     }
 
+    private func applyPendingFilter() {
+        guard let f = navigation.pendingCalendarFilter else { return }
+        filter = f
+        navigation.pendingCalendarFilter = nil
+    }
+
     private func isPerfectDay(_ date: Date) -> Bool {
+        if case .habit = filter { return false }
         let relevantGroups: [HabitGroup] = {
             if case .group(let id) = filter { return groups.filter { $0.id == id } }
             return groups
