@@ -1,21 +1,12 @@
-//
-//  StickerzzApp.swift
-//  Stickerzz
-//
-//  Created by Kathryn Heligman on 9/9/26.
-//
-
 import SwiftUI
-import CoreData
+import SwiftData
 
 @main
 struct StickerzzApp: App {
-    let persistenceController = PersistenceController.shared
-
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            RootTabView()
         }
+        .modelContainer(for: [HabitGroup.self, Habit.self, HabitCompletion.self])
     }
 }

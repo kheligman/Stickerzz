@@ -1,0 +1,144 @@
+import SwiftUI
+import SwiftData
+
+struct ManageView: View {
+    @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
+    @Environment(\.modelContext) private var context
+
+    @State private var showNewRoutine = false
+    @State private var showNewHabit = false
+
+    private var routines: [HabitGroup]  { groups.filter { !$0.isStandalone } }
+    private var standalone: [HabitGroup] { groups.filter { $0.isStandalone } }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !routines.isEmpty {
+                    Section("Routines") {
+                        ForEach(routines) { group in
+                            NavigationLink(destination: GroupDetailView(group: group)) {
+                                routineRow(group)
+                            }
+                        }
+                        .onDelete { offsets in
+                            offsets.map { routines[$0] }.forEach { context.delete($0) }
+                        }
+                        .onMove { source, dest in reorder(routines, from: source, to: dest) }
+                    }
+                }
+
+                if !standalone.isEmpty {
+                    Section("Habits") {
+                        ForEach(standalone) { group in
+                            if let habit = group.sortedHabits.first {
+                                NavigationLink(destination: GroupDetailView(group: group)) {
+                                    standaloneRow(habit)
+                                }
+                            }
+                        }
+                        .onDelete { offsets in
+                            offsets.map { standalone[$0] }.forEach { context.delete($0) }
+                        }
+                        .onMove { source, dest in reorder(standalone, from: source, to: dest) }
+                    }
+                }
+
+                if routines.isEmpty && standalone.isEmpty {
+                    emptyState
+                }
+            }
+            .navigationTitle("My Habits")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) { EditButton() }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button { showNewRoutine = true } label: {
+                            Label("New Routine", systemImage: "list.bullet")
+                        }
+                        Button { showNewHabit = true } label: {
+                            Label("New Habit", systemImage: "plus.circle")
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showNewRoutine) { GroupEditorView() }
+            .sheet(isPresented: $showNewHabit)   { StandaloneHabitCreatorView() }
+        }
+    }
+
+    // MARK: - Rows
+
+    private func routineRow(_ group: HabitGroup) -> some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(group.color)
+                .frame(width: 32, height: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(group.name).font(.headline)
+                Text("\(group.habits.filter { !$0.isLuxe }.count) habits")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func standaloneRow(_ habit: Habit) -> some View {
+        HStack(spacing: 12) {
+            Text(habit.emoji).font(.title2).frame(width: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(habit.name).font(.headline)
+                Text(frequencyLabel(habit)).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Text("No habits yet")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            Text("Tap + to add a habit or routine.")
+                .font(.subheadline)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .listRowBackground(Color.clear)
+    }
+
+    // MARK: - Helpers
+
+    private func reorder(_ subset: [HabitGroup], from source: IndexSet, to destination: Int) {
+        var all = groups
+        let subsetIds = subset.compactMap { g in all.firstIndex(where: { $0.id == g.id }) }
+        var sub = subset
+        sub.move(fromOffsets: source, toOffset: destination)
+        for (i, habit) in sub.enumerated() {
+            if let globalIdx = subsetIds[safe: i] {
+                all[globalIdx] = habit
+            }
+        }
+        for (i, group) in all.enumerated() { group.sortOrder = i }
+    }
+
+    private func frequencyLabel(_ habit: Habit) -> String {
+        switch habit.frequency {
+        case .daily: return "Daily"
+        case .weekly: return "\(habit.targetCount)× per week"
+        case .specificDays:
+            let syms = Calendar.current.veryShortWeekdaySymbols
+            return habit.scheduledWeekdays.sorted().compactMap { syms[safe: $0 - 1] }.joined(separator: "/")
+        }
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
