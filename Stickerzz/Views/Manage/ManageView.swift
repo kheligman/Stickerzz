@@ -57,6 +57,11 @@ struct ManageView: View {
                 }
             }
             .navigationTitle("My Habits")
+            #if DEBUG
+            .onTapGesture(count: 3) {
+                purchases.debugTogglePro()
+            }
+            #endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) { EditButton() }
                 ToolbarItem(placement: .navigationBarTrailing) {

@@ -12,6 +12,8 @@ struct DayDetailSheet: View {
         group.map { [$0] } ?? allGroups
     }
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             List {
@@ -37,8 +39,23 @@ struct DayDetailSheet: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 1) {
+                        Text(date.formatted(.dateTime.weekday(.wide).month().day()))
+                            .font(.headline)
+                        if let group {
+                            Text(group.name)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
     }
 }
@@ -85,7 +102,7 @@ struct HabitToggleRow: View {
                 .font(.title3)
         case .done:
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.accent)
                 .font(.title3)
         case .skipped:
             Image(systemName: "minus.circle.fill")

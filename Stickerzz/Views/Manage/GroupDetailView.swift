@@ -11,6 +11,7 @@ struct GroupDetailView: View {
     @State private var showNewHabit = false
     @State private var showPaywall = false
     @State private var editingHabit: Habit? = nil
+    @State private var habitToDelete: Habit? = nil
 
     private var coreHabits: [Habit] { group.sortedHabits.filter { !$0.isLuxe } }
     private var luxeHabits: [Habit] { group.sortedHabits.filter { $0.isLuxe } }
@@ -61,6 +62,18 @@ struct GroupDetailView: View {
         .sheet(isPresented: $showNewHabit) { HabitEditorView(group: group) }
         .sheet(item: $editingHabit) { HabitEditorView(group: group, existing: $0) }
         .sheet(isPresented: $showPaywall) { PaywallView().environment(PurchaseManager.shared) }
+        .alert("Delete \"\(habitToDelete?.name ?? "Habit")\"?", isPresented: Binding(
+            get: { habitToDelete != nil },
+            set: { if !$0 { habitToDelete = nil } }
+        )) {
+            Button("Delete", role: .destructive) {
+                if let h = habitToDelete { context.delete(h) }
+                habitToDelete = nil
+            }
+            Button("Cancel", role: .cancel) { habitToDelete = nil }
+        } message: {
+            Text("This habit and all its history will be permanently deleted.")
+        }
     }
 
     @ViewBuilder
@@ -83,7 +96,7 @@ struct GroupDetailView: View {
         }
         .padding(.vertical, 2)
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { context.delete(habit) } label: {
+            Button(role: .destructive) { habitToDelete = habit } label: {
                 Label("Delete", systemImage: "trash")
             }
             Button { editingHabit = habit } label: {

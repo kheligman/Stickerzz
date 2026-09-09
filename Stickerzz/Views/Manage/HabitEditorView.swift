@@ -31,8 +31,8 @@ struct HabitEditorView: View {
                                 .foregroundStyle(.primary)
                             Spacer()
                             if emoji.isEmpty {
-                                Text("Tap to choose")
-                                    .foregroundStyle(.secondary)
+                                Text("Required — tap to choose")
+                                    .foregroundStyle(!name.trimmingCharacters(in: .whitespaces).isEmpty ? .red.opacity(0.7) : .secondary)
                             } else {
                                 Text(emoji).font(.title2)
                             }

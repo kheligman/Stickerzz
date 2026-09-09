@@ -86,6 +86,7 @@ struct StandaloneHabitCreatorView: View {
         }
     }
 
+    @ViewBuilder
     private var dayPicker: some View {
         HStack(spacing: 6) {
             ForEach(1...7, id: \.self) { weekday in
@@ -99,12 +100,18 @@ struct StandaloneHabitCreatorView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(selected ? .white : .primary)
                         .frame(width: 34, height: 34)
-                        .background(selected ? Color.primary : Color(.systemGray5), in: Circle())
+                        .background(selected ? Color.accent : Color(.systemGray5), in: Circle())
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(.vertical, 4)
+
+        if scheduledWeekdays.isEmpty {
+            Text("Select at least one day")
+                .font(.caption)
+                .foregroundStyle(.red.opacity(0.8))
+        }
     }
 
     private func save() {

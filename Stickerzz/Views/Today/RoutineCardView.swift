@@ -135,22 +135,24 @@ struct InlineHabitRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 14) {
-            Text(habit.emoji).font(.title3).frame(width: 28)
+        Button(action: cycle) {
+            HStack(spacing: 14) {
+                Text(habit.emoji).font(.title3).frame(width: 28)
 
-            Text(habit.name)
-                .font(.body)
-                .foregroundStyle(state == .none ? .primary : .secondary)
-                .strikethrough(state == .done)
+                Text(habit.name)
+                    .font(.body)
+                    .foregroundStyle(state == .none ? .primary : .secondary)
+                    .strikethrough(state == .done)
 
-            Spacer()
+                Spacer()
 
-            Button(action: cycle) { stateIcon }
-                .buttonStyle(.plain)
+                stateIcon
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 11)
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder private var stateIcon: some View {

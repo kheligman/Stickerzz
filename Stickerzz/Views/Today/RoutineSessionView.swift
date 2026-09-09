@@ -51,15 +51,19 @@ struct RoutineSessionView: View {
 
                 VStack(spacing: 12) {
                     if allHandled {
-                        Button("Done") { stopTimer(); dismiss() }
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(.primary, in: RoundedRectangle(cornerRadius: 14))
-                            .foregroundStyle(.background)
+                        Button { stopTimer(); dismiss() } label: {
+                            Text("Done")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.accent, in: RoundedRectangle(cornerRadius: 14))
+                        }
                     } else {
                         Button(isRunning ? "Pause" : "Resume") { toggleTimer() }
                             .font(.subheadline).foregroundStyle(.secondary)
+                        Button("Close") { stopTimer(); dismiss() }
+                            .font(.caption).foregroundStyle(.tertiary)
                     }
                 }
                 .padding()
@@ -84,7 +88,7 @@ struct RoutineSessionView: View {
             Text("\(done) of \(coreHabits.count) complete")
                 .font(.subheadline).foregroundStyle(.secondary)
             ProgressView(value: coreHabits.isEmpty ? 0 : Double(done + skipped) / Double(coreHabits.count))
-                .tint(.primary).padding(.horizontal)
+                .tint(Color.accent).padding(.horizontal)
         }
         .padding(.vertical, 24)
         .frame(maxWidth: .infinity)
