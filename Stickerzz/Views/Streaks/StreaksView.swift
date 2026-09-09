@@ -13,27 +13,52 @@ struct StreaksView: View {
         return groups // includes standalone
     }
 
+    private var hasCoreHabits: Bool {
+        displayedGroups.contains { !$0.sortedHabits.filter { !$0.isLuxe }.isEmpty }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 groupFilterRow.padding(.vertical, 8)
                 Divider()
 
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(displayedGroups) { group in
-                            let coreHabits = group.sortedHabits.filter { !$0.isLuxe }
-                            ForEach(coreHabits) { habit in
-                                StreakCard(habit: habit, groupColor: group.color)
+                if hasCoreHabits {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(displayedGroups) { group in
+                                let coreHabits = group.sortedHabits.filter { !$0.isLuxe }
+                                ForEach(coreHabits) { habit in
+                                    StreakCard(habit: habit, groupColor: group.color)
+                                }
                             }
                         }
+                        .padding()
                     }
-                    .padding()
+                } else {
+                    streaksEmptyState
                 }
             }
             .navigationTitle("Streaks")
             .navigationBarTitleDisplayMode(.large)
         }
+    }
+
+    private var streaksEmptyState: some View {
+        VStack(spacing: 16) {
+            Text("🔥")
+                .font(.system(size: 56))
+            Text(groups.isEmpty ? "No habits yet" : "No habits in this group")
+                .font(.headline)
+            Text(groups.isEmpty
+                 ? "Add habits in the Manage tab to start building streaks."
+                 : "This group has no core habits to track streaks for.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var groupFilterRow: some View {

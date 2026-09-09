@@ -89,7 +89,11 @@ struct HabitEditorView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || emoji.isEmpty)
+                        .disabled(
+                            name.trimmingCharacters(in: .whitespaces).isEmpty ||
+                            emoji.isEmpty ||
+                            (frequency == .specificDays && scheduledWeekdays.isEmpty && !isLuxe)
+                        )
                 }
             }
             .onAppear { loadExisting() }
@@ -122,6 +126,12 @@ struct HabitEditorView: View {
             }
         }
         .padding(.vertical, 4)
+
+        if scheduledWeekdays.isEmpty {
+            Text("Select at least one day")
+                .font(.caption)
+                .foregroundStyle(.red.opacity(0.8))
+        }
     }
 
     private func loadExisting() {

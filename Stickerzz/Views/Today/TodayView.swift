@@ -23,26 +23,32 @@ struct TodayView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 12) {
-                    progressHeader
-                        .padding(.horizontal)
-
-                    ForEach(groups) { group in
-                        if group.isStandalone, let habit = group.sortedHabits.first {
-                            if habit.shouldAppearInToday() || habit.isLuxe {
-                                StandaloneHabitCard(habit: habit)
-                                    .padding(.horizontal)
-                            }
-                        } else if !group.isStandalone {
-                            RoutineCard(group: group)
+            Group {
+                if groups.isEmpty {
+                    todayEmptyState
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            progressHeader
                                 .padding(.horizontal)
-                        }
-                    }
 
-                    Spacer(minLength: 32)
+                            ForEach(groups) { group in
+                                if group.isStandalone, let habit = group.sortedHabits.first {
+                                    if habit.shouldAppearInToday() || habit.isLuxe {
+                                        StandaloneHabitCard(habit: habit)
+                                            .padding(.horizontal)
+                                    }
+                                } else if !group.isStandalone {
+                                    RoutineCard(group: group)
+                                        .padding(.horizontal)
+                                }
+                            }
+
+                            Spacer(minLength: 32)
+                        }
+                        .padding(.top, 8)
+                    }
                 }
-                .padding(.top, 8)
             }
             .navigationTitle(greeting)
             .navigationBarTitleDisplayMode(.large)
@@ -50,6 +56,21 @@ struct TodayView: View {
                 GroupDetailView(group: group)
             }
         }
+    }
+
+    private var todayEmptyState: some View {
+        VStack(spacing: 16) {
+            Text("🌱")
+                .font(.system(size: 56))
+            Text("Nothing here yet")
+                .font(.headline)
+            Text("Add a habit or routine in the Manage tab to get started.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var progressHeader: some View {

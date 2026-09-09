@@ -7,6 +7,7 @@ struct ManageView: View {
 
     @State private var showNewRoutine = false
     @State private var showNewHabit = false
+    @State private var groupToDelete: HabitGroup? = nil
 
     private var routines: [HabitGroup]  { groups.filter { !$0.isStandalone } }
     private var standalone: [HabitGroup] { groups.filter { $0.isStandalone } }
@@ -22,7 +23,9 @@ struct ManageView: View {
                             }
                         }
                         .onDelete { offsets in
-                            offsets.map { routines[$0] }.forEach { context.delete($0) }
+                            if let first = offsets.map({ routines[$0] }).first {
+                                groupToDelete = first
+                            }
                         }
                         .onMove { source, dest in reorder(routines, from: source, to: dest) }
                     }
@@ -38,7 +41,9 @@ struct ManageView: View {
                             }
                         }
                         .onDelete { offsets in
-                            offsets.map { standalone[$0] }.forEach { context.delete($0) }
+                            if let first = offsets.map({ standalone[$0] }).first {
+                                groupToDelete = first
+                            }
                         }
                         .onMove { source, dest in reorder(standalone, from: source, to: dest) }
                     }
@@ -66,7 +71,31 @@ struct ManageView: View {
             }
             .sheet(isPresented: $showNewRoutine) { GroupEditorView() }
             .sheet(isPresented: $showNewHabit)   { StandaloneHabitCreatorView() }
+            .alert(deleteAlertTitle, isPresented: Binding(
+                get: { groupToDelete != nil },
+                set: { if !$0 { groupToDelete = nil } }
+            )) {
+                Button("Delete", role: .destructive) {
+                    if let g = groupToDelete { context.delete(g) }
+                    groupToDelete = nil
+                }
+                Button("Cancel", role: .cancel) { groupToDelete = nil }
+            } message: {
+                if let g = groupToDelete {
+                    let habitCount = g.habits.filter { !$0.isLuxe }.count
+                    if g.isStandalone {
+                        Text("This habit and all its history will be permanently deleted.")
+                    } else {
+                        Text("This will permanently delete "\(g.name)" and all \(habitCount) habit\(habitCount == 1 ? "" : "s") inside it.")
+                    }
+                }
+            }
         }
+    }
+
+    private var deleteAlertTitle: String {
+        guard let g = groupToDelete else { return "Delete?" }
+        return g.isStandalone ? "Delete "\(g.sortedHabits.first?.name ?? "Habit")"?" : "Delete "\(g.name)"?"
     }
 
     // MARK: - Rows
