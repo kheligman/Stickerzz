@@ -12,6 +12,7 @@ final class Habit {
     // Default values enable SwiftData lightweight migration
     var isLuxe: Bool = false
     var scheduledWeekdaysRaw: String = ""
+    var tagsRaw: String = ""
     var group: HabitGroup?
     @Relationship(deleteRule: .cascade, inverse: \HabitCompletion.habit)
     var completions: [HabitCompletion] = []
@@ -44,6 +45,11 @@ final class Habit {
     var scheduledWeekdays: Set<Int> {
         get { Set(scheduledWeekdaysRaw.split(separator: ",").compactMap { Int($0) }) }
         set { scheduledWeekdaysRaw = newValue.sorted().map(String.init).joined(separator: ",") }
+    }
+
+    var tags: Set<String> {
+        get { Set(tagsRaw.split(separator: ",").map { String($0) }.filter { !$0.isEmpty }) }
+        set { tagsRaw = newValue.sorted().joined(separator: ",") }
     }
 
     // MARK: - Completion state

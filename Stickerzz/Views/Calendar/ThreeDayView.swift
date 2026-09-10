@@ -78,6 +78,7 @@ private struct ThreeDayPage: View {
         case .luxe:           return c.habit?.isLuxe == true
         case .group(let id):  return c.habit?.group?.id == id
         case .habit(let id):  return c.habit?.persistentModelID == id
+        case .tag(let name):  return c.habit?.tags.contains(name) == true
         }
     }
 }

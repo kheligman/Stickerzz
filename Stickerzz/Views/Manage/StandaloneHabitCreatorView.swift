@@ -14,6 +14,14 @@ struct StandaloneHabitCreatorView: View {
     @State private var showEmojiPicker = false
     @State private var reminderEnabled: Bool = false
     @State private var reminderTime: Date = Self.defaultReminderTime
+    @State private var tags: Set<String> = []
+    @State private var newTagText: String = ""
+
+    @Query private var allHabits: [Habit]
+
+    private var allTagsInSystem: [String] {
+        Array(Set(allHabits.flatMap { $0.tags })).sorted()
+    }
 
     private static var defaultReminderTime: Date {
         Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now)!
@@ -41,6 +49,42 @@ struct StandaloneHabitCreatorView: View {
 
                 Section("Name") {
                     TextField("e.g. Stretch, Vitamins, Journaling…", text: $name)
+                }
+
+                Section("Tags") {
+                    if !allTagsInSystem.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(allTagsInSystem, id: \.self) { tag in
+                                    Button {
+                                        if tags.contains(tag) { tags.remove(tag) }
+                                        else { tags.insert(tag) }
+                                    } label: {
+                                        Text(tag)
+                                            .font(.caption.weight(.medium))
+                                            .foregroundStyle(tags.contains(tag) ? .white : Color.accent)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                tags.contains(tag) ? Color.accent : Color.accent.opacity(0.1),
+                                                in: Capsule()
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                    HStack {
+                        TextField("New tag…", text: $newTagText)
+                            .submitLabel(.done)
+                            .onSubmit { addNewTag() }
+                        if !newTagText.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Button("Add") { addNewTag() }
+                                .foregroundStyle(Color.accent)
+                        }
+                    }
                 }
 
                 Section("Reminder") {
@@ -114,6 +158,13 @@ struct StandaloneHabitCreatorView: View {
         }
     }
 
+    private func addNewTag() {
+        let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        tags.insert(trimmed)
+        newTagText = ""
+    }
+
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         let cal = Calendar.current
@@ -137,6 +188,7 @@ struct StandaloneHabitCreatorView: View {
             scheduledWeekdays: frequency == .specificDays ? scheduledWeekdays : []
         )
         habit.group = group
+        habit.tags = tags
         context.insert(habit)
 
         NotificationManager.shared.reschedule(for: group)

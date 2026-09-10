@@ -4,17 +4,24 @@ import SwiftData
 struct StreaksView: View {
     @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
     @State private var selectedGroup: HabitGroup? = nil
+    @State private var selectedTag: String? = nil
 
     // Filter chips only show routines (not standalone groups)
     private var routineGroups: [HabitGroup] { groups.filter { !$0.isStandalone } }
 
-    private var displayedGroups: [HabitGroup] {
-        if let selected = selectedGroup { return [selected] }
-        return groups // includes standalone
+    private var allTags: [String] {
+        Array(Set(groups.flatMap { $0.habits }.flatMap { $0.tags })).sorted()
+    }
+
+    private func habitSubset(in group: HabitGroup) -> [Habit] {
+        let coreHabits = group.sortedHabits.filter { !$0.isLuxe }
+        if let tag = selectedTag { return coreHabits.filter { $0.tags.contains(tag) } }
+        if let selected = selectedGroup { return selected.id == group.id ? coreHabits : [] }
+        return coreHabits
     }
 
     private var hasCoreHabits: Bool {
-        displayedGroups.contains { !$0.sortedHabits.filter { !$0.isLuxe }.isEmpty }
+        groups.contains { !habitSubset(in: $0).isEmpty }
     }
 
     var body: some View {
@@ -26,9 +33,8 @@ struct StreaksView: View {
                 if hasCoreHabits {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(displayedGroups) { group in
-                                let coreHabits = group.sortedHabits.filter { !$0.isLuxe }
-                                ForEach(coreHabits) { habit in
+                            ForEach(groups) { group in
+                                ForEach(habitSubset(in: group)) { habit in
                                     StreakCard(habit: habit, groupColor: group.color)
                                 }
                             }
@@ -48,11 +54,9 @@ struct StreaksView: View {
         VStack(spacing: 16) {
             Text("🔥")
                 .font(.system(size: 56))
-            Text(groups.isEmpty ? "No habits yet" : "No habits in this group")
+            Text(emptyTitle)
                 .font(.headline)
-            Text(groups.isEmpty
-                 ? "Add habits in the Manage tab to start building streaks."
-                 : "This group has no core habits to track streaks for.")
+            Text(emptyMessage)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -61,11 +65,24 @@ struct StreaksView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private var emptyTitle: String {
+        if let tag = selectedTag { return "No habits tagged \"\(tag)\"" }
+        if groups.isEmpty { return "No habits yet" }
+        return "No habits in this group"
+    }
+
+    private var emptyMessage: String {
+        if selectedTag != nil { return "Tag your habits in the Manage tab to filter streaks by topic." }
+        if groups.isEmpty { return "Add habits in the Manage tab to start building streaks." }
+        return "This group has no core habits to track streaks for."
+    }
+
     private var groupFilterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                FilterChip(label: "All", color: .accent, isSelected: selectedGroup == nil) {
+                FilterChip(label: "All", color: .accent, isSelected: selectedGroup == nil && selectedTag == nil) {
                     selectedGroup = nil
+                    selectedTag = nil
                 }
                 ForEach(routineGroups) { group in
                     FilterChip(
@@ -73,7 +90,18 @@ struct StreaksView: View {
                         color: group.color,
                         isSelected: selectedGroup?.id == group.id
                     ) {
+                        selectedTag = nil
                         selectedGroup = (selectedGroup?.id == group.id) ? nil : group
+                    }
+                }
+                ForEach(allTags, id: \.self) { tag in
+                    FilterChip(
+                        label: "#\(tag)",
+                        color: .accent,
+                        isSelected: selectedTag == tag
+                    ) {
+                        selectedGroup = nil
+                        selectedTag = (selectedTag == tag) ? nil : tag
                     }
                 }
             }

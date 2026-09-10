@@ -12,6 +12,7 @@ enum CalendarFilter: Equatable {
     case group(PersistentIdentifier)
     case luxe
     case habit(PersistentIdentifier)
+    case tag(String)
 }
 
 struct CalendarView: View {
@@ -39,6 +40,10 @@ struct CalendarView: View {
     private var habitForFilter: Habit? {
         guard case .habit(let id) = filter else { return nil }
         return groups.flatMap { $0.habits }.first { $0.persistentModelID == id }
+    }
+
+    private var allTags: [String] {
+        Array(Set(groups.flatMap { $0.habits }.flatMap { $0.tags })).sorted()
     }
 
     private var isShowingToday: Bool {
@@ -188,6 +193,15 @@ struct CalendarView: View {
                             filter = (filter == .group(group.id)) ? .all : .group(group.id)
                         }
                     }
+                    ForEach(allTags, id: \.self) { tag in
+                        FilterChip(
+                            label: "#\(tag)",
+                            color: .accent,
+                            isSelected: filter == .tag(tag)
+                        ) {
+                            filter = (filter == .tag(tag)) ? .all : .tag(tag)
+                        }
+                    }
                 }
             }
             .padding(.horizontal)
@@ -257,6 +271,7 @@ struct CalendarView: View {
         case .luxe:           return c.habit?.isLuxe == true
         case .group(let id):  return c.habit?.group?.id == id
         case .habit(let id):  return c.habit?.persistentModelID == id
+        case .tag(let name):  return c.habit?.tags.contains(name) == true
         }
     }
 
@@ -268,6 +283,7 @@ struct CalendarView: View {
 
     private func isPerfectDay(_ date: Date) -> Bool {
         if case .habit = filter { return false }
+        if case .tag = filter { return false }
         let relevantGroups: [HabitGroup] = {
             if case .group(let id) = filter { return groups.filter { $0.id == id } }
             return groups

@@ -13,4 +13,9 @@ final class AppNavigation {
         pendingCalendarFilter = .habit(habit.persistentModelID)
         selectedTab = 0
     }
+
+    func showCalendar(filteredToTag tag: String) {
+        pendingCalendarFilter = .tag(tag)
+        selectedTab = 0
+    }
 }

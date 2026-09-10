@@ -15,6 +15,14 @@ struct HabitEditorView: View {
     @State private var isLuxe: Bool = false
     @State private var scheduledWeekdays: Set<Int> = []
     @State private var showEmojiPicker = false
+    @State private var tags: Set<String> = []
+    @State private var newTagText: String = ""
+
+    @Query private var allHabits: [Habit]
+
+    private var allTagsInSystem: [String] {
+        Array(Set(allHabits.flatMap { $0.tags })).sorted()
+    }
 
     private let weekdaySymbols = Calendar.current.veryShortWeekdaySymbols // Sun=0
 
@@ -58,6 +66,43 @@ struct HabitEditorView: View {
                     }
                     .onChange(of: isLuxe) { _, luxe in
                         if luxe { frequency = .daily; scheduledWeekdays = [] }
+                    }
+                }
+
+                // Tags
+                Section("Tags") {
+                    if !allTagsInSystem.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(allTagsInSystem, id: \.self) { tag in
+                                    Button {
+                                        if tags.contains(tag) { tags.remove(tag) }
+                                        else { tags.insert(tag) }
+                                    } label: {
+                                        Text(tag)
+                                            .font(.caption.weight(.medium))
+                                            .foregroundStyle(tags.contains(tag) ? .white : Color.accent)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                tags.contains(tag) ? Color.accent : Color.accent.opacity(0.1),
+                                                in: Capsule()
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                    HStack {
+                        TextField("New tag…", text: $newTagText)
+                            .submitLabel(.done)
+                            .onSubmit { addNewTag() }
+                        if !newTagText.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Button("Add") { addNewTag() }
+                                .foregroundStyle(Color.accent)
+                        }
                     }
                 }
 
@@ -135,6 +180,13 @@ struct HabitEditorView: View {
         }
     }
 
+    private func addNewTag() {
+        let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        tags.insert(trimmed)
+        newTagText = ""
+    }
+
     private func loadExisting() {
         guard let h = existing else { return }
         name = h.name
@@ -143,6 +195,7 @@ struct HabitEditorView: View {
         targetCount = h.targetCount
         isLuxe = h.isLuxe
         scheduledWeekdays = h.scheduledWeekdays
+        tags = h.tags
     }
 
     private func save() {
@@ -154,6 +207,7 @@ struct HabitEditorView: View {
             h.frequency = isLuxe ? .daily : frequency
             h.targetCount = frequency == .weekly ? targetCount : 1
             h.scheduledWeekdays = frequency == .specificDays ? scheduledWeekdays : []
+            h.tags = tags
         } else {
             let h = Habit(
                 name: trimmed,
@@ -165,6 +219,7 @@ struct HabitEditorView: View {
                 scheduledWeekdays: frequency == .specificDays ? scheduledWeekdays : []
             )
             h.group = group
+            h.tags = tags
             context.insert(h)
         }
         dismiss()

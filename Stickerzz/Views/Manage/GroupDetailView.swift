@@ -80,7 +80,7 @@ struct GroupDetailView: View {
     private func habitRow(_ habit: Habit, showLuxeStats: Bool = false) -> some View {
         HStack(spacing: 12) {
             Text(habit.emoji).font(.title2)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(habit.name).font(.body)
                 if showLuxeStats {
                     Text(luxeStats(habit))
@@ -90,6 +90,18 @@ struct GroupDetailView: View {
                     Text(frequencyLabel(habit))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                if !habit.tags.isEmpty {
+                    HStack(spacing: 4) {
+                        ForEach(habit.tags.sorted(), id: \.self) { tag in
+                            Text(tag)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(Color.accent)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.accent.opacity(0.1), in: Capsule())
+                        }
+                    }
                 }
             }
             Spacer()
