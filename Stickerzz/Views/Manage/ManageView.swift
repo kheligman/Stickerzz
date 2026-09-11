@@ -77,6 +77,15 @@ struct ManageView: View {
                     }
                 }
 
+                Section {
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text("\(AppVersion.current) (\(AppVersion.build))")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 if isTestableBuild {
                     Section("Developer") {
                         Toggle("Pro Unlocked", isOn: Binding(
