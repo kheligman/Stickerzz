@@ -91,8 +91,16 @@ struct GroupDetailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                if !habit.tags.isEmpty {
+                if !habit.isRequired && !habit.isLuxe || !habit.tags.isEmpty {
                     HStack(spacing: 4) {
+                        if !habit.isRequired && !habit.isLuxe {
+                            Text("preferred")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.orange)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.orange.opacity(0.1), in: Capsule())
+                        }
                         ForEach(habit.tags.sorted(), id: \.self) { tag in
                             Text(tag)
                                 .font(.caption2.weight(.medium))

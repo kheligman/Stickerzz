@@ -8,12 +8,23 @@ struct RoutineCard: View {
     @State private var isExpanded = false
     @State private var showTimer = false
 
-    private var coreHabits: [Habit] { group.sortedHabits.filter { !$0.isLuxe && $0.shouldAppearInToday() } }
-    private var luxeHabits: [Habit]  { group.sortedHabits.filter { $0.isLuxe } }
+    private var coreHabits: [Habit]      { group.sortedHabits.filter { !$0.isLuxe && $0.shouldAppearInToday() } }
+    private var luxeHabits: [Habit]      { group.sortedHabits.filter { $0.isLuxe } }
+    private var requiredHabits: [Habit]  { coreHabits.filter { $0.isRequired } }
+    private var preferredHabits: [Habit] { coreHabits.filter { !$0.isRequired } }
     private var done: Int    { coreHabits.filter { $0.isCompleted(on: $0.activeDate()) }.count }
     private var skipped: Int { coreHabits.filter { $0.isSkipped(on: $0.activeDate()) }.count }
     private var total: Int   { coreHabits.count }
-    private var allHandled: Bool { total > 0 && (done + skipped) == total }
+
+    // Routine is "done" when all required habits are completed
+    private var mvpDone: Bool {
+        !requiredHabits.isEmpty && requiredHabits.allSatisfy { $0.isCompleted(on: $0.activeDate()) }
+    }
+    // allHandled drives the accent color; uses MVP logic if preferred habits exist
+    private var allHandled: Bool {
+        guard total > 0 else { return false }
+        return preferredHabits.isEmpty ? (done + skipped) == total : mvpDone
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,7 +94,12 @@ struct RoutineCard: View {
 
     private var statsLabel: String {
         guard total > 0 else { return "No habits scheduled" }
-        if allHandled { return "All done ✓" }
+        if allHandled {
+            let preferredPending = preferredHabits.filter {
+                !$0.isCompleted(on: $0.activeDate()) && !$0.isSkipped(on: $0.activeDate())
+            }.count
+            return preferredPending > 0 ? "MVP done ✓" : "All done ✓"
+        }
         return "\(done) of \(total) done"
     }
 
@@ -141,10 +157,17 @@ struct InlineHabitRow: View {
             HStack(spacing: 14) {
                 Text(habit.emoji).font(.title3).frame(width: 28)
 
-                Text(habit.name)
-                    .font(.body)
-                    .foregroundStyle(state == .none ? .primary : .secondary)
-                    .strikethrough(state == .done)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(habit.name)
+                        .font(.body)
+                        .foregroundStyle(state == .none ? .primary : .secondary)
+                        .strikethrough(state == .done)
+                    if !habit.isRequired && !habit.isLuxe {
+                        Text("preferred")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 Spacer()
 

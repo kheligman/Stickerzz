@@ -34,7 +34,14 @@ struct StreaksView: View {
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(groups) { group in
-                                ForEach(habitSubset(in: group)) { habit in
+                                let subset = habitSubset(in: group)
+                                if !subset.isEmpty && !group.isStandalone && selectedTag == nil {
+                                    let required = group.habits.filter { !$0.isLuxe && $0.isRequired }
+                                    if !required.isEmpty {
+                                        GroupStreakCard(group: group)
+                                    }
+                                }
+                                ForEach(subset) { habit in
                                     StreakCard(habit: habit, groupColor: group.color)
                                 }
                             }
@@ -162,6 +169,53 @@ struct StreakCard: View {
             let days = habit.scheduledWeekdays.sorted().compactMap { symbols[safe: $0 - 1] }.joined(separator: "/")
             return "scheduled day streak · \(days)"
         }
+    }
+}
+
+struct GroupStreakCard: View {
+    let group: HabitGroup
+
+    private var current: Int { StreakEngine.currentStreak(for: group) }
+    private var best: Int { StreakEngine.bestStreak(for: group) }
+
+    var body: some View {
+        HStack(spacing: 16) {
+            if group.emoji.isEmpty {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(group.color)
+                    .frame(width: 40, height: 40)
+            } else {
+                Text(group.emoji).font(.system(size: 32))
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(group.name).font(.headline)
+                Text("routine streak").font(.caption).foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(current)")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(current > 0 ? Color.accent : Color(.systemGray3))
+                    Image(systemName: "flame.fill")
+                        .foregroundStyle(current > 0 ? .orange : Color(.systemGray3))
+                        .font(.title3)
+                }
+                Text("best \(best)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(group.color.opacity(0.7), lineWidth: 2.5)
+        )
+        .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
     }
 }
 

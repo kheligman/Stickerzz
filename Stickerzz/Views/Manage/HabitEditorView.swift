@@ -13,6 +13,7 @@ struct HabitEditorView: View {
     @State private var frequency: FrequencyType = .daily
     @State private var targetCount: Int = 1
     @State private var isLuxe: Bool = false
+    @State private var isRequired: Bool = true
     @State private var scheduledWeekdays: Set<Int> = []
     @State private var showEmojiPicker = false
     @State private var tags: Set<String> = []
@@ -65,7 +66,18 @@ struct HabitEditorView: View {
                         }
                     }
                     .onChange(of: isLuxe) { _, luxe in
-                        if luxe { frequency = .daily; scheduledWeekdays = [] }
+                        if luxe { frequency = .daily; scheduledWeekdays = []; isRequired = true }
+                    }
+
+                    if !isLuxe && !group.isStandalone {
+                        Toggle(isOn: Binding(get: { !isRequired }, set: { isRequired = !$0 })) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Preferred (optional)")
+                                Text("Part of the routine, but not required to mark it complete")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
 
@@ -194,6 +206,7 @@ struct HabitEditorView: View {
         frequency = h.frequency
         targetCount = h.targetCount
         isLuxe = h.isLuxe
+        isRequired = h.isRequired
         scheduledWeekdays = h.scheduledWeekdays
         tags = h.tags
     }
@@ -204,6 +217,7 @@ struct HabitEditorView: View {
             h.name = trimmed
             h.emoji = emoji
             h.isLuxe = isLuxe
+            h.isRequired = isLuxe ? true : isRequired
             h.frequency = isLuxe ? .daily : frequency
             h.targetCount = frequency == .weekly ? targetCount : 1
             h.scheduledWeekdays = frequency == .specificDays ? scheduledWeekdays : []
@@ -219,6 +233,7 @@ struct HabitEditorView: View {
                 scheduledWeekdays: frequency == .specificDays ? scheduledWeekdays : []
             )
             h.group = group
+            h.isRequired = isLuxe ? true : isRequired
             h.tags = tags
             context.insert(h)
         }

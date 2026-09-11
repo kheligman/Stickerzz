@@ -4,6 +4,53 @@ enum StreakEngine {
 
     // MARK: - Public API
 
+    static func currentStreak(for group: HabitGroup) -> Int {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let required = group.habits.filter { !$0.isLuxe && $0.isRequired }
+        guard !required.isEmpty else { return 0 }
+
+        let mvpDates = mvpDoneSet(required: required, cal: cal)
+
+        let anchor: Date
+        if mvpDates.contains(today) {
+            anchor = today
+        } else {
+            let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+            guard mvpDates.contains(yesterday) else { return 0 }
+            anchor = yesterday
+        }
+
+        var streak = 0
+        var cursor = anchor
+        while mvpDates.contains(cursor) {
+            streak += 1
+            cursor = cal.date(byAdding: .day, value: -1, to: cursor)!
+        }
+        return streak
+    }
+
+    static func bestStreak(for group: HabitGroup) -> Int {
+        let cal = Calendar.current
+        let required = group.habits.filter { !$0.isLuxe && $0.isRequired }
+        guard !required.isEmpty else { return 0 }
+        let mvpDates = mvpDoneSet(required: required, cal: cal).sorted()
+        guard !mvpDates.isEmpty else { return 0 }
+
+        var best = 0, current = 0
+        var last: Date? = nil
+        for date in mvpDates {
+            if let prev = last {
+                let gap = cal.dateComponents([.day], from: prev, to: date).day ?? 0
+                if gap > 1 { current = 0 }
+            }
+            current += 1
+            best = max(best, current)
+            last = date
+        }
+        return best
+    }
+
     static func currentStreak(for habit: Habit) -> Int {
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
@@ -173,6 +220,16 @@ enum StreakEngine {
     }
 
     // MARK: - Helpers
+
+    private static func mvpDoneSet(required: [Habit], cal: Calendar) -> Set<Date> {
+        guard !required.isEmpty else { return [] }
+        var result = Set(required[0].completions.filter { $0.type == .done }.map(\.dateDay))
+        for habit in required.dropFirst() {
+            let doneDates = Set(habit.completions.filter { $0.type == .done }.map(\.dateDay))
+            result = result.intersection(doneDates)
+        }
+        return result
+    }
 
     private static func doneSet(_ habit: Habit) -> Set<Date> {
         Set(habit.completions.filter { $0.type == .done }.map(\.dateDay))

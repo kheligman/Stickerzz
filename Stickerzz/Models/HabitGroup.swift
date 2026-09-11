@@ -10,6 +10,7 @@ final class HabitGroup {
     var habits: [Habit] = []
 
     // Defaults enable lightweight SwiftData migration
+    var emoji: String = ""
     var isStandalone: Bool = false
     var reminderEnabled: Bool = false
     var reminderHour: Int = 8

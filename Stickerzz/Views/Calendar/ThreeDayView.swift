@@ -4,6 +4,7 @@ import SwiftData
 struct ThreeDayView: View {
     let completions: [HabitCompletion]
     let filter: CalendarFilter
+    let groups: [HabitGroup]
     @Binding var selectedDay: Date?
     @Binding var page: Int
 
@@ -23,6 +24,7 @@ struct ThreeDayView: View {
                     centerDate: centerDate(for: p),
                     completions: completions,
                     filter: filter,
+                    groups: groups,
                     selectedDay: $selectedDay
                 )
                 .tag(p)
@@ -39,6 +41,7 @@ private struct ThreeDayPage: View {
     let centerDate: Date
     let completions: [HabitCompletion]
     let filter: CalendarFilter
+    let groups: [HabitGroup]
     @Binding var selectedDay: Date?
 
     private var days: [Date] {
@@ -64,6 +67,28 @@ private struct ThreeDayPage: View {
 
     private func completedHabits(for date: Date) -> [(emoji: String, name: String)] {
         let day = Calendar.current.startOfDay(for: date)
+
+        if case .all = filter {
+            var result: [(emoji: String, name: String)] = []
+            for group in groups {
+                let hasCompletion = completions.contains { c in
+                    c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id && !(c.habit?.isLuxe ?? false)
+                }
+                guard hasCompletion else { continue }
+                if group.isStandalone {
+                    if let c = completions.first(where: { c in
+                        c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id
+                    }), let e = c.habit?.emoji, let n = c.habit?.name {
+                        result.append((emoji: e, name: n))
+                    }
+                } else {
+                    let emoji = group.emoji.isEmpty ? "📋" : group.emoji
+                    result.append((emoji: emoji, name: group.name))
+                }
+            }
+            return result
+        }
+
         return completions
             .filter { c in c.dateDay == day && c.type == .done && matchesFilter(c) }
             .compactMap { c in

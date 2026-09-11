@@ -11,6 +11,7 @@ final class Habit {
     var startDate: Date
     // Default values enable SwiftData lightweight migration
     var isLuxe: Bool = false
+    var isRequired: Bool = true
     var scheduledWeekdaysRaw: String = ""
     var tagsRaw: String = ""
     var group: HabitGroup?

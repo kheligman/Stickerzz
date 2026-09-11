@@ -4,6 +4,7 @@ import SwiftData
 struct SevenDayView: View {
     let completions: [HabitCompletion]
     let filter: CalendarFilter
+    let groups: [HabitGroup]
     @Binding var selectedDay: Date?
     @Binding var page: Int
 
@@ -23,6 +24,7 @@ struct SevenDayView: View {
                     centerDate: centerDate(for: p),
                     completions: completions,
                     filter: filter,
+                    groups: groups,
                     selectedDay: $selectedDay
                 )
                 .tag(p)
@@ -39,6 +41,7 @@ private struct SevenDayPage: View {
     let centerDate: Date
     let completions: [HabitCompletion]
     let filter: CalendarFilter
+    let groups: [HabitGroup]
     @Binding var selectedDay: Date?
 
     private var days: [Date] {
@@ -64,6 +67,27 @@ private struct SevenDayPage: View {
 
     private func emojis(for date: Date) -> [String] {
         let day = Calendar.current.startOfDay(for: date)
+
+        if case .all = filter {
+            var result: [String] = []
+            for group in groups {
+                let hasCompletion = completions.contains { c in
+                    c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id && !(c.habit?.isLuxe ?? false)
+                }
+                guard hasCompletion else { continue }
+                if group.isStandalone {
+                    if let emoji = completions.first(where: { c in
+                        c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id
+                    })?.habit?.emoji {
+                        result.append(emoji)
+                    }
+                } else {
+                    result.append(group.emoji.isEmpty ? "📋" : group.emoji)
+                }
+            }
+            return result
+        }
+
         return completions.filter { c in
             c.dateDay == day && c.type == .done && matchesFilter(c)
         }.compactMap { $0.habit?.emoji }

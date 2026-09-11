@@ -89,6 +89,7 @@ struct CalendarView: View {
                     SevenDayView(
                         completions: completions,
                         filter: filter,
+                        groups: groups,
                         selectedDay: $selectedDay,
                         page: $sevenDayPage
                     )
@@ -97,6 +98,7 @@ struct CalendarView: View {
                     ThreeDayView(
                         completions: completions,
                         filter: filter,
+                        groups: groups,
                         selectedDay: $selectedDay,
                         page: $threeDayPage
                     )
@@ -260,6 +262,27 @@ struct CalendarView: View {
 
     func emojis(for date: Date) -> [String] {
         let day = cal.startOfDay(for: date)
+
+        if case .all = filter {
+            var result: [String] = []
+            for group in groups {
+                let hasCompletion = completions.contains { c in
+                    c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id && !(c.habit?.isLuxe ?? false)
+                }
+                guard hasCompletion else { continue }
+                if group.isStandalone {
+                    if let emoji = completions.first(where: { c in
+                        c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id
+                    })?.habit?.emoji {
+                        result.append(emoji)
+                    }
+                } else {
+                    result.append(group.emoji.isEmpty ? "📋" : group.emoji)
+                }
+            }
+            return result
+        }
+
         return completions.filter { c in
             c.dateDay == day && c.type == .done && matchesFilter(c)
         }.compactMap { $0.habit?.emoji }

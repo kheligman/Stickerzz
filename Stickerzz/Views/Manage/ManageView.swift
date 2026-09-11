@@ -15,6 +15,16 @@ struct ManageView: View {
     private var routines: [HabitGroup]   { groups.filter { !$0.isStandalone } }
     private var standalone: [HabitGroup] { groups.filter { $0.isStandalone } }
 
+    // True in Simulator, DEBUG builds, and TestFlight (sandbox receipt). False on App Store.
+    private var isTestableBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        let url = Bundle.main.appStoreReceiptURL
+        return url?.lastPathComponent == "sandboxReceipt"
+        #endif
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -56,15 +66,15 @@ struct ManageView: View {
                     emptyState
                 }
 
-                #if DEBUG
-                Section("Developer") {
-                    Toggle("Pro Unlocked", isOn: Binding(
-                        get: { purchases.isPro },
-                        set: { _ in purchases.debugTogglePro() }
-                    ))
-                    .tint(.accent)
+                if isTestableBuild {
+                    Section("Developer") {
+                        Toggle("Pro Unlocked", isOn: Binding(
+                            get: { purchases.isPro },
+                            set: { _ in purchases.debugTogglePro() }
+                        ))
+                        .tint(.accent)
+                    }
                 }
-                #endif
             }
             .navigationTitle("My Habits")
             .toolbar {
@@ -127,9 +137,13 @@ struct ManageView: View {
 
     private func routineRow(_ group: HabitGroup) -> some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(group.color)
-                .frame(width: 32, height: 32)
+            if group.emoji.isEmpty {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(group.color)
+                    .frame(width: 32, height: 32)
+            } else {
+                Text(group.emoji).font(.title2).frame(width: 32)
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(group.name).font(.headline)
                 Text("\(group.habits.filter { !$0.isLuxe }.count) habits")

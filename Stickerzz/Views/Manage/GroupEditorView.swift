@@ -9,6 +9,8 @@ struct GroupEditorView: View {
     @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
 
     @State private var name: String = ""
+    @State private var emoji: String = ""
+    @State private var showEmojiPicker = false
     @State private var selectedHex: String = HabitGroup.paletteHexes[0]
     @State private var reminderEnabled: Bool = false
     @State private var reminderTime: Date = Self.defaultReminderTime
@@ -20,6 +22,25 @@ struct GroupEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button {
+                        showEmojiPicker = true
+                    } label: {
+                        HStack {
+                            Text("Emoji")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if emoji.isEmpty {
+                                Text("Tap to choose")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text(emoji).font(.title2)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Section("Name") {
                     TextField("e.g. Morning Routine", text: $name)
                 }
@@ -61,12 +82,16 @@ struct GroupEditorView: View {
                 }
             }
             .onAppear { loadExisting() }
+            .sheet(isPresented: $showEmojiPicker) {
+                EmojiPickerView(selectedEmoji: $emoji)
+            }
         }
     }
 
     private func loadExisting() {
         guard let g = existing else { return }
         name = g.name
+        emoji = g.emoji
         selectedHex = g.colorHex
         reminderEnabled = g.reminderEnabled
         let cal = Calendar.current
@@ -81,6 +106,7 @@ struct GroupEditorView: View {
 
         if let g = existing {
             g.name = trimmed
+            g.emoji = emoji
             g.colorHex = selectedHex
             g.reminderEnabled = reminderEnabled
             g.reminderHour = hour
@@ -88,6 +114,7 @@ struct GroupEditorView: View {
             NotificationManager.shared.reschedule(for: g)
         } else {
             let g = HabitGroup(name: trimmed, colorHex: selectedHex, sortOrder: groups.count)
+            g.emoji = emoji
             g.reminderEnabled = reminderEnabled
             g.reminderHour = hour
             g.reminderMinute = minute
