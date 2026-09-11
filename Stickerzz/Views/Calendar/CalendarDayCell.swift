@@ -37,7 +37,7 @@ struct CalendarDayCell: View {
                     ForEach(Array(emojiRows.enumerated()), id: \.offset) { _, row in
                         HStack(spacing: 0) {
                             ForEach(row, id: \.self) { emoji in
-                                Text(emoji).font(.system(size: 11))
+                                Text(emoji).font(.system(size: 12))
                             }
                         }
                     }
@@ -52,11 +52,14 @@ struct CalendarDayCell: View {
             }
             .padding(4)
         }
-        .frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
-        .background(isSelected ? Color(.systemGray5) : .clear, in: RoundedRectangle(cornerRadius: 6))
+        .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
+        .background(
+            isSelected ? Color.accent.opacity(0.13) :
+            isToday    ? Color.accent.opacity(0.07) : .clear
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(isToday ? Color.accent : Color(.systemGray4), lineWidth: isToday ? 2.5 : 0.5)
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isToday ? Color.accent : .clear, lineWidth: 2)
         )
     }
 }

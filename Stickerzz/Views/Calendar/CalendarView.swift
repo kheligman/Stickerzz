@@ -29,7 +29,7 @@ struct CalendarView: View {
 
     private let cal = Calendar.current
     private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
 
     @Environment(AppNavigation.self) private var navigation
 
@@ -88,9 +88,7 @@ struct CalendarView: View {
 
                 switch viewMode {
                 case .month:
-                    weekdayHeader.padding(.horizontal, 4)
-                    Divider()
-                    calendarGrid.padding(.horizontal, 4)
+                    monthCard
 
                 case .week:
                     SevenDayView(
@@ -160,7 +158,7 @@ struct CalendarView: View {
             }
             Spacer()
             Text(displayedMonth, format: .dateTime.month(.wide).year())
-                .font(.title3.weight(.semibold))
+                .font(.title2.weight(.bold))
             Spacer()
             Button { shiftMonth(by: 1) } label: {
                 Image(systemName: "chevron.right").font(.body.weight(.semibold)).foregroundStyle(.primary)
@@ -225,41 +223,51 @@ struct CalendarView: View {
         }
     }
 
-    // MARK: - Weekday Header (month only)
+    // MARK: - Month Card (weekday header + grid)
 
-    private var weekdayHeader: some View {
-        HStack(spacing: 0) {
-            ForEach(weekdayLabels, id: \.self) { label in
-                Text(label)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    // MARK: - Month Calendar Grid
-
-    private var calendarGrid: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 0) {
-                ForEach(Array(calendarDays.enumerated()), id: \.offset) { _, day in
-                    if let day {
-                        CalendarDayCell(
-                            date: day,
-                            emojis: emojis(for: day),
-                            isToday: cal.isDateInToday(day),
-                            isSelected: selectedDay.map { cal.isDate($0, inSameDayAs: day) } ?? false,
-                            isPerfectDay: filter != .luxe && isPerfectDay(day)
-                        )
-                        .onTapGesture { selectedDay = day }
-                    } else {
-                        Color.clear.frame(minHeight: 64)
-                    }
+    private var monthCard: some View {
+        VStack(spacing: 0) {
+            // Weekday header
+            HStack(spacing: 0) {
+                ForEach(weekdayLabels, id: \.self) { label in
+                    Text(label)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.accent.opacity(0.7))
+                        .frame(maxWidth: .infinity)
                 }
             }
+            .padding(.vertical, 8)
+            .background(Color(.systemBackground))
+
+            // 1pt accent-tinted separator
+            Color.accent.opacity(0.15).frame(height: 1)
+
+            // Grid
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 1) {
+                    ForEach(Array(calendarDays.enumerated()), id: \.offset) { _, day in
+                        if let day {
+                            CalendarDayCell(
+                                date: day,
+                                emojis: emojis(for: day),
+                                isToday: cal.isDateInToday(day),
+                                isSelected: selectedDay.map { cal.isDate($0, inSameDayAs: day) } ?? false,
+                                isPerfectDay: filter != .luxe && isPerfectDay(day)
+                            )
+                            .background(Color(.systemBackground))
+                            .onTapGesture { selectedDay = day }
+                        } else {
+                            Color(.systemBackground).frame(minHeight: 72)
+                        }
+                    }
+                }
+                .background(Color.accent.opacity(0.08))
+            }
         }
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.06), radius: 8, y: 3)
+        .padding(.horizontal, 12)
+        .padding(.top, 6)
     }
 
     // MARK: - Helpers
