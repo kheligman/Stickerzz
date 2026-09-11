@@ -3,22 +3,23 @@ import SwiftData
 
 struct RoutineCard: View {
     let group: HabitGroup
+    let date: Date
 
     @Environment(\.modelContext) private var context
     @State private var isExpanded = false
     @State private var showTimer = false
 
-    private var coreHabits: [Habit]      { group.sortedHabits.filter { !$0.isLuxe && $0.shouldAppearInToday() } }
+    private var coreHabits: [Habit]      { group.sortedHabits.filter { !$0.isLuxe && $0.shouldAppearInToday(on: date) } }
     private var luxeHabits: [Habit]      { group.sortedHabits.filter { $0.isLuxe } }
     private var requiredHabits: [Habit]  { coreHabits.filter { $0.isRequired } }
     private var preferredHabits: [Habit] { coreHabits.filter { !$0.isRequired } }
-    private var done: Int    { coreHabits.filter { $0.isCompleted(on: $0.activeDate()) }.count }
-    private var skipped: Int { coreHabits.filter { $0.isSkipped(on: $0.activeDate()) }.count }
+    private var done: Int    { coreHabits.filter { $0.isCompleted(on: $0.activeDate(for: date)) }.count }
+    private var skipped: Int { coreHabits.filter { $0.isSkipped(on: $0.activeDate(for: date)) }.count }
     private var total: Int   { coreHabits.count }
 
     // Routine is "done" when all required habits are completed
     private var mvpDone: Bool {
-        !requiredHabits.isEmpty && requiredHabits.allSatisfy { $0.isCompleted(on: $0.activeDate()) }
+        !requiredHabits.isEmpty && requiredHabits.allSatisfy { $0.isCompleted(on: $0.activeDate(for: date)) }
     }
     // allHandled drives the accent color; uses MVP logic if preferred habits exist
     private var allHandled: Bool {
@@ -96,7 +97,7 @@ struct RoutineCard: View {
         guard total > 0 else { return "No habits scheduled" }
         if allHandled {
             let preferredPending = preferredHabits.filter {
-                !$0.isCompleted(on: $0.activeDate()) && !$0.isSkipped(on: $0.activeDate())
+                !$0.isCompleted(on: $0.activeDate(for: date)) && !$0.isSkipped(on: $0.activeDate(for: date))
             }.count
             return preferredPending > 0 ? "MVP done ✓" : "All done ✓"
         }
@@ -108,7 +109,7 @@ struct RoutineCard: View {
     private var habitList: some View {
         VStack(spacing: 0) {
             ForEach(requiredHabits) { habit in
-                InlineHabitRow(habit: habit, date: habit.activeDate())
+                InlineHabitRow(habit: habit, date: habit.activeDate(for: date))
                 if habit.id != requiredHabits.last?.id {
                     Divider().padding(.leading, 52)
                 }
@@ -125,7 +126,7 @@ struct RoutineCard: View {
                 .frame(height: 1)
                 .padding(.vertical, 6)
                 ForEach(preferredHabits) { habit in
-                    InlineHabitRow(habit: habit, date: habit.activeDate())
+                    InlineHabitRow(habit: habit, date: habit.activeDate(for: date))
                     if habit.id != preferredHabits.last?.id {
                         Divider().padding(.leading, 52)
                     }
@@ -136,7 +137,7 @@ struct RoutineCard: View {
                 Divider()
                 DisclosureGroup {
                     ForEach(luxeHabits) { habit in
-                        InlineHabitRow(habit: habit, date: .now)
+                        InlineHabitRow(habit: habit, date: date)
                     }
                 } label: {
                     Label("Bonus", systemImage: "sparkles")

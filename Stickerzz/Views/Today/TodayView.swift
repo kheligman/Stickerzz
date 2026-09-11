@@ -4,9 +4,14 @@ import SwiftData
 struct TodayView: View {
     @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
     @State private var showSummary = false
+    @State private var selectedDate: Date = Calendar.current.startOfDay(for: .now)
+    @State private var weekAnchor: Date = Calendar.current.startOfDay(for: .now)
+    @State private var showDatePicker = false
+
+    private let cal = Calendar.current
 
     private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: .now)
+        let hour = cal.component(.hour, from: .now)
         switch hour {
         case 0..<12: return "Good morning"
         case 12..<17: return "Good afternoon"
@@ -14,44 +19,60 @@ struct TodayView: View {
         }
     }
 
+    private var navigationTitle: String {
+        if cal.isDateInToday(selectedDate) { return greeting }
+        if cal.isDateInYesterday(selectedDate) { return "Yesterday" }
+        return selectedDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+    }
+
     private var allTodayHabits: [Habit] {
-        groups.flatMap { $0.sortedHabits.filter { !$0.isLuxe && $0.shouldAppearInToday() } }
+        groups.flatMap { $0.sortedHabits.filter { !$0.isLuxe && $0.shouldAppearInToday(on: selectedDate) } }
     }
 
     private var doneCount: Int {
-        allTodayHabits.filter { $0.isCompleted(on: $0.activeDate()) }.count
+        allTodayHabits.filter { $0.isCompleted(on: $0.activeDate(for: selectedDate)) }.count
+    }
+
+    private var weekDays: [Date] {
+        guard let interval = cal.dateInterval(of: .weekOfYear, for: weekAnchor) else { return [] }
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: interval.start) }
     }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if groups.isEmpty {
-                    todayEmptyState
-                } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            progressHeader
-                                .padding(.horizontal)
+            VStack(spacing: 0) {
+                dayStrip
+                Divider()
 
-                            ForEach(groups) { group in
-                                if group.isStandalone, let habit = group.sortedHabits.first {
-                                    if habit.shouldAppearInToday() || habit.isLuxe {
-                                        StandaloneHabitCard(habit: habit)
+                Group {
+                    if groups.isEmpty {
+                        todayEmptyState
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 12) {
+                                progressHeader
+                                    .padding(.horizontal)
+
+                                ForEach(groups) { group in
+                                    if group.isStandalone, let habit = group.sortedHabits.first {
+                                        if habit.shouldAppearInToday(on: selectedDate) || habit.isLuxe {
+                                            StandaloneHabitCard(habit: habit, date: selectedDate)
+                                                .padding(.horizontal)
+                                        }
+                                    } else if !group.isStandalone {
+                                        RoutineCard(group: group, date: selectedDate)
                                             .padding(.horizontal)
                                     }
-                                } else if !group.isStandalone {
-                                    RoutineCard(group: group)
-                                        .padding(.horizontal)
                                 }
-                            }
 
-                            Spacer(minLength: 32)
+                                Spacer(minLength: 32)
+                            }
+                            .padding(.top, 8)
                         }
-                        .padding(.top, 8)
                     }
                 }
             }
-            .navigationTitle(greeting)
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: HabitGroup.self) { group in
                 GroupDetailView(group: group)
@@ -62,12 +83,89 @@ struct TodayView: View {
                         Image(systemName: "square.and.arrow.up")
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showDatePicker = true } label: {
+                        Image(systemName: "calendar")
+                    }
+                }
             }
             .sheet(isPresented: $showSummary) {
                 DaySummarySheet()
             }
+            .sheet(isPresented: $showDatePicker) {
+                NavigationStack {
+                    DatePicker(
+                        "",
+                        selection: Binding(
+                            get: { selectedDate },
+                            set: { newDate in
+                                selectedDate = cal.startOfDay(for: newDate)
+                                weekAnchor = cal.startOfDay(for: newDate)
+                            }
+                        ),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.graphical)
+                    .tint(Color.accent)
+                    .padding()
+                    .navigationTitle("Jump to Date")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showDatePicker = false }
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
         }
     }
+
+    // MARK: - Day Strip
+
+    private var dayStrip: some View {
+        HStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.3)) {
+                    weekAnchor = cal.date(byAdding: .day, value: -7, to: weekAnchor) ?? weekAnchor
+                }
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28)
+                    .contentShape(Rectangle())
+            }
+
+            ForEach(weekDays, id: \.self) { day in
+                DayPill(
+                    date: day,
+                    isSelected: cal.isDate(day, inSameDayAs: selectedDate),
+                    isToday: cal.isDateInToday(day)
+                ) {
+                    withAnimation(.spring(response: 0.2)) {
+                        selectedDate = day
+                    }
+                }
+            }
+
+            Button {
+                withAnimation(.spring(response: 0.3)) {
+                    weekAnchor = cal.date(byAdding: .day, value: 7, to: weekAnchor) ?? weekAnchor
+                }
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28)
+                    .contentShape(Rectangle())
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Subviews
 
     private var todayEmptyState: some View {
         VStack(spacing: 16) {
@@ -88,15 +186,50 @@ struct TodayView: View {
         let total = allTodayHabits.count
         return HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day())
+                Text(selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
                     .font(.subheadline).foregroundStyle(.secondary)
-                Text("\(doneCount) of \(total) done today")
+                Text(total == 0 ? "Nothing scheduled" : "\(doneCount) of \(total) done")
                     .font(.headline)
             }
             Spacer()
             CircularProgress(fraction: total > 0 ? Double(doneCount) / Double(total) : 0)
                 .frame(width: 48, height: 48)
         }
+    }
+}
+
+// MARK: - Day Pill
+
+private struct DayPill: View {
+    let date: Date
+    let isSelected: Bool
+    let isToday: Bool
+    let action: () -> Void
+
+    private let cal = Calendar.current
+    private var dayLetter: String { date.formatted(.dateTime.weekday(.narrow)) }
+    private var dayNumber: String { "\(cal.component(.day, from: date))" }
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Text(dayLetter)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(isSelected ? .white : .secondary)
+                ZStack {
+                    Circle()
+                        .fill(isToday && !isSelected ? Color.accent : .clear)
+                        .frame(width: 26, height: 26)
+                    Text(dayNumber)
+                        .font(.system(size: 15, weight: (isToday || isSelected) ? .bold : .regular))
+                        .foregroundStyle(isSelected || isToday ? .white : .primary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(isSelected ? Color.accent : .clear, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -122,6 +255,7 @@ struct CircularProgress: View {
 
 struct StandaloneHabitCard: View {
     let habit: Habit
+    let date: Date
     @Environment(\.modelContext) private var context
     @Environment(AppNavigation.self) private var navigation
 
@@ -129,9 +263,8 @@ struct StandaloneHabitCard: View {
     private enum ToggleState { case none, done, skipped }
 
     private var state: ToggleState {
-        let date = habit.activeDate()
         if habit.isCompleted(on: date) { return .done }
-        if habit.isSkipped(on: date) { return .skipped }
+        if habit.isSkipped(on: date)   { return .skipped }
         return .none
     }
 
@@ -181,19 +314,18 @@ struct StandaloneHabitCard: View {
     }
 
     private func cycle() {
-        let date = habit.activeDate()
         switch state {
         case .none:
             context.insert(HabitCompletion(date: date, type: .done, habit: habit))
         case .done:
-            removeExisting(on: date)
+            removeExisting()
             context.insert(HabitCompletion(date: date, type: .skipped, habit: habit))
         case .skipped:
-            removeExisting(on: date)
+            removeExisting()
         }
     }
 
-    private func removeExisting(on date: Date) {
+    private func removeExisting() {
         if let c = habit.completions.first(where: { Calendar.current.isDate($0.dateDay, inSameDayAs: date) }) {
             context.delete(c)
         }
