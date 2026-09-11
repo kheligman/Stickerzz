@@ -25,6 +25,7 @@ struct CalendarView: View {
     @State private var viewMode: CalendarViewMode = .month
     @State private var sevenDayPage: Int = 1000
     @State private var threeDayPage: Int = 1000
+    @State private var showFilterSheet = false
 
     private let cal = Calendar.current
     private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]
@@ -75,9 +76,15 @@ struct CalendarView: View {
                         .padding(.vertical, 2)
                 }
 
-                groupFilterRow.padding(.vertical, 8)
-
-                Divider()
+                if filter != .all {
+                    HStack {
+                        activeFilterChip
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 5)
+                    Divider()
+                }
 
                 switch viewMode {
                 case .month:
@@ -112,6 +119,14 @@ struct CalendarView: View {
                         .opacity(isShowingToday ? 0 : 1)
                         .disabled(isShowingToday)
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showFilterSheet = true } label: {
+                        Image(systemName: filter == .all
+                              ? "line.3.horizontal.decrease.circle"
+                              : "line.3.horizontal.decrease.circle.fill")
+                            .foregroundStyle(filter == .all ? .primary : Color.accent)
+                    }
+                }
             }
         }
         .sheet(isPresented: Binding(
@@ -129,6 +144,11 @@ struct CalendarView: View {
         }
         .onAppear { applyPendingFilter() }
         .onChange(of: navigation.pendingCalendarFilter) { _, _ in applyPendingFilter() }
+        .sheet(isPresented: $showFilterSheet) {
+            CalendarFilterSheet(filter: $filter, groups: groups, allTags: allTags)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Month Navigator
@@ -169,44 +189,39 @@ struct CalendarView: View {
         }
     }
 
-    // MARK: - Group Filter
+    // MARK: - Active Filter Chip
 
-    private var groupFilterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                FilterChip(label: "All", color: .accent, isSelected: filter == .all) {
-                    filter = .all
-                }
-
-                if let habit = habitForFilter {
-                    FilterChip(label: "\(habit.emoji) \(habit.name)", color: .accent, isSelected: true) {
-                        filter = .all
-                    }
-                } else {
-                    FilterChip(label: "✨ Luxe", color: .orange, isSelected: filter == .luxe) {
-                        filter = (filter == .luxe) ? .all : .luxe
-                    }
-                    ForEach(groups) { group in
-                        FilterChip(
-                            label: group.name,
-                            color: group.color,
-                            isSelected: filter == .group(group.id)
-                        ) {
-                            filter = (filter == .group(group.id)) ? .all : .group(group.id)
-                        }
-                    }
-                    ForEach(allTags, id: \.self) { tag in
-                        FilterChip(
-                            label: "#\(tag)",
-                            color: .accent,
-                            isSelected: filter == .tag(tag)
-                        ) {
-                            filter = (filter == .tag(tag)) ? .all : .tag(tag)
-                        }
-                    }
-                }
+    private var activeFilterChip: some View {
+        HStack(spacing: 5) {
+            Text(activeFilterLabel)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.accent)
+            Button { filter = .all } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.accent.opacity(0.6))
             }
-            .padding(.horizontal)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Color.accent.opacity(0.1), in: Capsule())
+    }
+
+    private var activeFilterLabel: String {
+        switch filter {
+        case .all:   return ""
+        case .luxe:  return "✨ Luxe"
+        case .group(let id):
+            guard let group = groups.first(where: { $0.id == id }) else { return "" }
+            if group.isStandalone, let habit = group.sortedHabits.first {
+                return "\(habit.emoji) \(habit.name)"
+            }
+            return group.emoji.isEmpty ? group.name : "\(group.emoji) \(group.name)"
+        case .habit(let id):
+            guard let habit = groups.flatMap({ $0.habits }).first(where: { $0.persistentModelID == id }) else { return "" }
+            return "\(habit.emoji) \(habit.name)"
+        case .tag(let name):
+            return "#\(name)"
         }
     }
 
@@ -335,7 +350,7 @@ struct CalendarView: View {
     }
 }
 
-// MARK: - Filter Chip
+// MARK: - Filter Chip (used by StreaksView)
 
 struct FilterChip: View {
     let label: String
@@ -351,6 +366,109 @@ struct FilterChip: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
                 .background(isSelected ? color : Color(.systemGray6), in: Capsule())
+        }
+    }
+}
+
+// MARK: - Calendar Filter Sheet
+
+struct CalendarFilterSheet: View {
+    @Binding var filter: CalendarFilter
+    let groups: [HabitGroup]
+    let allTags: [String]
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var routines: [HabitGroup]   { groups.filter { !$0.isStandalone } }
+    private var standalones: [HabitGroup] { groups.filter { $0.isStandalone } }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    filterRow(label: "All", icon: { Image(systemName: "square.grid.2x2").foregroundStyle(.secondary) },
+                              isSelected: filter == .all) { filter = .all }
+                }
+
+                if !routines.isEmpty {
+                    Section("Routines") {
+                        ForEach(routines) { group in
+                            filterRow(
+                                label: group.emoji.isEmpty ? group.name : "\(group.emoji) \(group.name)",
+                                icon: {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(group.color)
+                                        .frame(width: 22, height: 22)
+                                },
+                                isSelected: filter == .group(group.id)
+                            ) { filter = .group(group.id) }
+                        }
+                    }
+                }
+
+                if !standalones.isEmpty {
+                    Section("Habits") {
+                        ForEach(standalones) { group in
+                            if let habit = group.sortedHabits.first {
+                                filterRow(
+                                    label: "\(habit.emoji) \(habit.name)",
+                                    icon: { EmptyView() },
+                                    isSelected: filter == .group(group.id)
+                                ) { filter = .group(group.id) }
+                            }
+                        }
+                    }
+                }
+
+                if !allTags.isEmpty {
+                    Section("Tags") {
+                        ForEach(allTags, id: \.self) { tag in
+                            filterRow(
+                                label: "#\(tag)",
+                                icon: { Image(systemName: "tag").foregroundStyle(.secondary) },
+                                isSelected: filter == .tag(tag)
+                            ) { filter = .tag(tag) }
+                        }
+                    }
+                }
+
+                Section {
+                    filterRow(
+                        label: "✨ Luxe",
+                        icon: { EmptyView() },
+                        isSelected: filter == .luxe
+                    ) { filter = .luxe }
+                }
+            }
+            .navigationTitle("Filter by")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func filterRow<Icon: View>(
+        label: String,
+        icon: () -> Icon,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            action()
+            dismiss()
+        } label: {
+            HStack(spacing: 12) {
+                icon().frame(width: 22)
+                Text(label).foregroundStyle(.primary)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark").foregroundStyle(Color.accent).fontWeight(.semibold)
+                }
+            }
         }
     }
 }

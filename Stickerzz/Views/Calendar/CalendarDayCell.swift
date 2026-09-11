@@ -17,12 +17,6 @@ struct CalendarDayCell: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            // Perfect day warm glow
-            if isPerfectDay && !emojis.isEmpty {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.yellow.opacity(0.12))
-            }
-
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .top, spacing: 2) {
                     Text(dayNumber)
@@ -60,6 +54,9 @@ struct CalendarDayCell: View {
         }
         .frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
         .background(isSelected ? Color(.systemGray5) : .clear, in: RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(.systemGray4), lineWidth: 0.5))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(isToday ? Color.accent : Color(.systemGray4), lineWidth: isToday ? 2.5 : 0.5)
+        )
     }
 }
