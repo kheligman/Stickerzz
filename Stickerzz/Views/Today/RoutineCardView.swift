@@ -107,10 +107,28 @@ struct RoutineCard: View {
 
     private var habitList: some View {
         VStack(spacing: 0) {
-            ForEach(coreHabits) { habit in
+            ForEach(requiredHabits) { habit in
                 InlineHabitRow(habit: habit, date: habit.activeDate())
-                if habit.id != coreHabits.last?.id {
+                if habit.id != requiredHabits.last?.id {
                     Divider().padding(.leading, 52)
+                }
+            }
+
+            if !preferredHabits.isEmpty {
+                GeometryReader { geo in
+                    Path { path in
+                        path.move(to: CGPoint(x: 16, y: 0))
+                        path.addLine(to: CGPoint(x: geo.size.width - 16, y: 0))
+                    }
+                    .stroke(Color(.systemGray4), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                }
+                .frame(height: 1)
+                .padding(.vertical, 6)
+                ForEach(preferredHabits) { habit in
+                    InlineHabitRow(habit: habit, date: habit.activeDate())
+                    if habit.id != preferredHabits.last?.id {
+                        Divider().padding(.leading, 52)
+                    }
                 }
             }
 
@@ -157,17 +175,10 @@ struct InlineHabitRow: View {
             HStack(spacing: 14) {
                 Text(habit.emoji).font(.title3).frame(width: 28)
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(habit.name)
-                        .font(.body)
-                        .foregroundStyle(state == .none ? .primary : .secondary)
-                        .strikethrough(state == .done)
-                    if !habit.isRequired && !habit.isLuxe {
-                        Text("preferred")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text(habit.name)
+                    .font(.body)
+                    .foregroundStyle(state == .none ? .primary : .secondary)
+                    .strikethrough(state == .done)
 
                 Spacer()
 

@@ -13,17 +13,27 @@ struct GroupDetailView: View {
     @State private var editingHabit: Habit? = nil
     @State private var habitToDelete: Habit? = nil
 
-    private var coreHabits: [Habit] { group.sortedHabits.filter { !$0.isLuxe } }
+    private var requiredHabits: [Habit] { group.sortedHabits.filter { !$0.isLuxe && $0.isRequired } }
+    private var preferredHabits: [Habit] { group.sortedHabits.filter { !$0.isLuxe && !$0.isRequired } }
     private var luxeHabits: [Habit] { group.sortedHabits.filter { $0.isLuxe } }
 
     var body: some View {
         List {
-            if !coreHabits.isEmpty {
+            if !requiredHabits.isEmpty {
                 Section("Habits") {
-                    ForEach(coreHabits) { habit in
+                    ForEach(requiredHabits) { habit in
                         habitRow(habit)
                     }
-                    .onMove { moveHabits(from: $0, to: $1, in: coreHabits) }
+                    .onMove { moveHabits(from: $0, to: $1, in: requiredHabits) }
+                }
+            }
+
+            if !preferredHabits.isEmpty {
+                Section("Preferred") {
+                    ForEach(preferredHabits) { habit in
+                        habitRow(habit)
+                    }
+                    .onMove { moveHabits(from: $0, to: $1, in: preferredHabits) }
                 }
             }
 
@@ -91,16 +101,8 @@ struct GroupDetailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                if !habit.isRequired && !habit.isLuxe || !habit.tags.isEmpty {
+                if !habit.tags.isEmpty {
                     HStack(spacing: 4) {
-                        if !habit.isRequired && !habit.isLuxe {
-                            Text("preferred")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.orange)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 3)
-                                .background(Color.orange.opacity(0.1), in: Capsule())
-                        }
                         ForEach(habit.tags.sorted(), id: \.self) { tag in
                             Text(tag)
                                 .font(.caption2.weight(.medium))
