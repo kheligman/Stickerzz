@@ -38,6 +38,31 @@ struct TodayView: View {
         return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: interval.start) }
     }
 
+    // Returns true when a group is fully handled and should sink to the bottom
+    private func isGroupDone(_ group: HabitGroup) -> Bool {
+        if group.isStandalone {
+            guard let habit = group.sortedHabits.first, !habit.isLuxe else { return false }
+            return habit.isCompleted(on: habit.activeDate(for: selectedDate))
+        }
+        let core = group.sortedHabits.filter { !$0.isLuxe && $0.shouldAppearInToday(on: selectedDate) }
+        guard !core.isEmpty else { return false }
+        let required = core.filter { $0.isRequired }
+        let preferred = core.filter { !$0.isRequired }
+        let done    = core.filter { $0.isCompleted(on: $0.activeDate(for: selectedDate)) }.count
+        let skipped = core.filter { $0.isSkipped(on: $0.activeDate(for: selectedDate)) }.count
+        let mvpDone = !required.isEmpty && required.allSatisfy { $0.isCompleted(on: $0.activeDate(for: selectedDate)) }
+        return preferred.isEmpty ? (done + skipped) == core.count : mvpDone
+    }
+
+    private var sortedGroups: [HabitGroup] {
+        groups.sorted { a, b in
+            let aDone = isGroupDone(a)
+            let bDone = isGroupDone(b)
+            if aDone != bDone { return !aDone }
+            return false
+        }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -53,7 +78,7 @@ struct TodayView: View {
                                 progressHeader
                                     .padding(.horizontal)
 
-                                ForEach(groups) { group in
+                                ForEach(sortedGroups) { group in
                                     if group.isStandalone, let habit = group.sortedHabits.first {
                                         if habit.shouldAppearInToday(on: selectedDate) || habit.isLuxe {
                                             StandaloneHabitCard(habit: habit, date: selectedDate)
@@ -68,6 +93,8 @@ struct TodayView: View {
                                 Spacer(minLength: 32)
                             }
                             .padding(.top, 8)
+                            .animation(.spring(response: 0.45, dampingFraction: 0.8),
+                                       value: sortedGroups.map { isGroupDone($0) })
                         }
                     }
                 }
