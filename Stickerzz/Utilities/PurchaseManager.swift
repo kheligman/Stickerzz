@@ -12,9 +12,7 @@ final class PurchaseManager {
 
     private(set) var isPro: Bool = false
 
-    #if DEBUG
     func debugTogglePro() { isPro.toggle() }
-    #endif
     private(set) var product: Product? = nil
     private(set) var isLoading: Bool = false
 
