@@ -66,6 +66,17 @@ struct ManageView: View {
                     emptyState
                 }
 
+                if !purchases.isPro {
+                    Section {
+                        Button {
+                            Task { await purchases.restorePurchases() }
+                        } label: {
+                            Text("Restore Purchase")
+                                .foregroundStyle(Color.accent)
+                        }
+                    }
+                }
+
                 if isTestableBuild {
                     Section("Developer") {
                         Toggle("Pro Unlocked", isOn: Binding(
