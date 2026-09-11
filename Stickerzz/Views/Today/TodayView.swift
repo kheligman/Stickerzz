@@ -3,6 +3,7 @@ import SwiftData
 
 struct TodayView: View {
     @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
+    @State private var showSummary = false
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: .now)
@@ -54,6 +55,16 @@ struct TodayView: View {
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: HabitGroup.self) { group in
                 GroupDetailView(group: group)
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showSummary = true } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                }
+            }
+            .sheet(isPresented: $showSummary) {
+                DaySummarySheet()
             }
         }
     }
