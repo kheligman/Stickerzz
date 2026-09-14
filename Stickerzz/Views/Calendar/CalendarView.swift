@@ -26,6 +26,7 @@ struct CalendarView: View {
     @State private var sevenDayPage: Int = 1000
     @State private var threeDayPage: Int = 1000
     @State private var showFilterSheet = false
+    @State private var compressCalendar = true
 
     private let cal = Calendar.current
     private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]
@@ -117,6 +118,15 @@ struct CalendarView: View {
                         .opacity(isShowingToday ? 0 : 1)
                         .disabled(isShowingToday)
                 }
+                if viewMode == .month {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            withAnimation { compressCalendar.toggle() }
+                        } label: {
+                            Image(systemName: compressCalendar ? "rectangle.grid.1x2" : "rectangle.grid.2x2")
+                        }
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { showFilterSheet = true } label: {
                         Image(systemName: filter == .all
@@ -142,6 +152,11 @@ struct CalendarView: View {
         }
         .onAppear { applyPendingFilter() }
         .onChange(of: navigation.pendingCalendarFilter) { _, _ in applyPendingFilter() }
+        .onChange(of: navigation.retappedTab) { _, tab in
+            guard tab == 0 else { return }
+            jumpToToday()
+            navigation.retappedTab = nil
+        }
         .sheet(isPresented: $showFilterSheet) {
             CalendarFilterSheet(filter: $filter, groups: groups, allTags: allTags)
                 .presentationDetents([.medium, .large])
@@ -175,7 +190,7 @@ struct CalendarView: View {
         switch viewMode {
         case .month: return ""
         case .week:
-            let center = cal.date(byAdding: .day, value: sevenDayPage - 1000, to: today)!
+            let center = cal.date(byAdding: .day, value: (sevenDayPage - 1000) * 7, to: today)!
             let start  = cal.date(byAdding: .day, value: -3, to: center)!
             let end    = cal.date(byAdding: .day, value:  3, to: center)!
             return "\(start.formatted(fmt)) – \(end.formatted(fmt))"
@@ -286,7 +301,7 @@ struct CalendarView: View {
     func emojis(for date: Date) -> [String] {
         let day = cal.startOfDay(for: date)
 
-        if case .all = filter {
+        if case .all = filter, compressCalendar {
             var result: [String] = []
             for group in groups {
                 let hasCompletion = completions.contains { c in

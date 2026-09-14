@@ -5,7 +5,16 @@ struct RootTabView: View {
 
     var body: some View {
         @Bindable var nav = navigation
-        TabView(selection: $nav.selectedTab) {
+        TabView(selection: Binding(
+            get: { nav.selectedTab },
+            set: { tapped in
+                if tapped == nav.selectedTab {
+                    nav.retappedTab = tapped
+                } else {
+                    nav.selectedTab = tapped
+                }
+            }
+        )) {
             CalendarView()
                 .tabItem { Label("Calendar", systemImage: "calendar") }
                 .tag(0)

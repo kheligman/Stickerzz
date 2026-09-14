@@ -67,30 +67,13 @@ private struct ThreeDayPage: View {
 
     private func completedHabits(for date: Date) -> [(emoji: String, name: String)] {
         let day = Calendar.current.startOfDay(for: date)
-
-        if case .all = filter {
-            var result: [(emoji: String, name: String)] = []
-            for group in groups {
-                let hasCompletion = completions.contains { c in
-                    c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id && !(c.habit?.isLuxe ?? false)
-                }
-                guard hasCompletion else { continue }
-                if group.isStandalone {
-                    if let c = completions.first(where: { c in
-                        c.dateDay == day && c.type == .done && c.habit?.group?.id == group.id
-                    }), let e = c.habit?.emoji, let n = c.habit?.name {
-                        result.append((emoji: e, name: n))
-                    }
-                } else {
-                    let emoji = group.emoji.isEmpty ? "📋" : group.emoji
-                    result.append((emoji: emoji, name: group.name))
-                }
-            }
-            return result
-        }
-
         return completions
-            .filter { c in c.dateDay == day && c.type == .done && matchesFilter(c) }
+            .filter { c in
+                c.dateDay == day &&
+                c.type == .done &&
+                matchesFilter(c) &&
+                (filter == .luxe || !(c.habit?.isLuxe ?? false))
+            }
             .compactMap { c in
                 guard let e = c.habit?.emoji, let n = c.habit?.name else { return nil }
                 return (emoji: e, name: n)

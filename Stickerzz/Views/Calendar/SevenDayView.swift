@@ -14,7 +14,7 @@ struct SevenDayView: View {
     private let today = Calendar.current.startOfDay(for: .now)
 
     private func centerDate(for p: Int) -> Date {
-        Calendar.current.date(byAdding: .day, value: p - Self.centerPage, to: today)!
+        Calendar.current.date(byAdding: .day, value: (p - Self.centerPage) * 7, to: today)!
     }
 
     var body: some View {
@@ -31,7 +31,6 @@ struct SevenDayView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .ignoresSafeArea(edges: .bottom)
     }
 }
 
@@ -61,8 +60,9 @@ private struct SevenDayPage: View {
                 .onTapGesture { selectedDay = day }
             }
         }
-        .padding(.horizontal, 2)
-        .padding(.top, 8)
+        .padding(.horizontal, 4)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 
     private func emojis(for date: Date) -> [String] {

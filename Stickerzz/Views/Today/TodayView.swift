@@ -3,6 +3,7 @@ import SwiftData
 
 struct TodayView: View {
     @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
+    @Environment(AppNavigation.self) private var navigation
     @State private var showSummary = false
     @State private var selectedDate: Date = Calendar.current.startOfDay(for: .now)
     @State private var weekAnchor: Date = Calendar.current.startOfDay(for: .now)
@@ -31,6 +32,13 @@ struct TodayView: View {
 
     private var doneCount: Int {
         allTodayHabits.filter { $0.isCompleted(on: $0.activeDate(for: selectedDate)) }.count
+    }
+
+    private func jumpToToday() {
+        withAnimation(.spring(response: 0.3)) {
+            selectedDate = cal.startOfDay(for: .now)
+            weekAnchor  = cal.startOfDay(for: .now)
+        }
     }
 
     private var weekDays: [Date] {
@@ -115,6 +123,16 @@ struct TodayView: View {
                         Image(systemName: "calendar")
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Today") { jumpToToday() }
+                        .opacity(cal.isDateInToday(selectedDate) ? 0 : 1)
+                        .disabled(cal.isDateInToday(selectedDate))
+                }
+            }
+            .onChange(of: navigation.retappedTab) { _, tab in
+                guard tab == 1 else { return }
+                jumpToToday()
+                navigation.retappedTab = nil
             }
             .sheet(isPresented: $showSummary) {
                 DaySummarySheet()
