@@ -10,7 +10,7 @@ struct GroupEditorView: View {
 
     @State private var name: String = ""
     @State private var emoji: String = ""
-    @State private var showEmojiPicker = false
+    @State private var emojiKeyboardActive = false
     @State private var selectedHex: String = HabitGroup.paletteHexes[0]
     @State private var reminderEnabled: Bool = false
     @State private var reminderTime: Date = Self.defaultReminderTime
@@ -24,7 +24,7 @@ struct GroupEditorView: View {
             Form {
                 Section {
                     Button {
-                        showEmojiPicker = true
+                        emojiKeyboardActive = true
                     } label: {
                         HStack {
                             Text("Emoji")
@@ -82,9 +82,10 @@ struct GroupEditorView: View {
                 }
             }
             .onAppear { loadExisting() }
-            .sheet(isPresented: $showEmojiPicker) {
-                EmojiPickerView(selectedEmoji: $emoji)
-            }
+            .overlay(
+                EmojiTextField(text: $emoji, isFirstResponder: $emojiKeyboardActive)
+                    .frame(width: 0, height: 0)
+            )
         }
     }
 

@@ -1,59 +1,55 @@
 import SwiftUI
+import UIKit
 
-struct EmojiPickerView: View {
-    @Binding var selectedEmoji: String
-    @Environment(\.dismiss) private var dismiss
+// Zero-size hidden text field that forces the system emoji keyboard.
+// Set isFirstResponder = true to open the picker; binding updates on pick and keyboard auto-dismisses.
+struct EmojiTextField: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var isFirstResponder: Bool
 
-    private let categories: [(String, [String])] = [
-        ("Beauty & Skin", ["💄", "💋", "💅", "💆", "🧖", "🪞", "🧴", "🧼", "🫧", "🪷", "🌹", "🌸"]),
-        ("Sleep & Rest", ["🌙", "😴", "🛌", "⭐", "✨", "🌟", "💤", "🛏", "🌛", "🫶"]),
-        ("Health & Body", ["💪", "🏃", "🧘", "🚶", "🏋️", "🤸", "🏊", "🚴", "❤️", "🩺", "💊"]),
-        ("Teeth & Face", ["🦷", "🪥", "😁", "🫦", "🧏", "💧", "🫁"]),
-        ("Food & Drink", ["💧", "🥤", "🧃", "☕", "🍵", "🫖", "🍎", "🥗", "🥦", "🫐", "🍋"]),
-        ("Mind & Spirit", ["🧠", "🌿", "🍃", "🌺", "🌻", "☀️", "🌊", "🦋", "🕊", "📔", "📝"]),
-        ("Treatments", ["🪨", "🧊", "🌡", "💎", "🔮", "🌀", "⚗️", "🛁", "🚿", "🧸"]),
-        ("Goals", ["⏱", "🎯", "🏆", "🔥", "⚡", "🌈", "🎉", "✅"]),
-    ]
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
 
-    var body: some View {
-        NavigationStack {
-            List {
-                ForEach(categories, id: \.0) { name, emojis in
-                    Section(name) {
-                        LazyVGrid(
-                            columns: Array(repeating: GridItem(.flexible()), count: 6),
-                            spacing: 10
-                        ) {
-                            ForEach(emojis, id: \.self) { emoji in
-                                Button {
-                                    selectedEmoji = emoji
-                                    dismiss()
-                                } label: {
-                                    Text(emoji)
-                                        .font(.title2)
-                                        .frame(width: 44, height: 44)
-                                        .background(
-                                            selectedEmoji == emoji
-                                                ? Color(.systemGray4)
-                                                : Color(.systemGray6),
-                                            in: RoundedRectangle(cornerRadius: 10)
-                                        )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
+    func makeUIView(context: Context) -> EmojiUITextField {
+        let field = EmojiUITextField()
+        field.delegate = context.coordinator
+        field.addTarget(context.coordinator,
+                        action: #selector(Coordinator.textChanged(_:)),
+                        for: .editingChanged)
+        field.alpha = 0
+        field.autocorrectionType = .no
+        return field
+    }
+
+    func updateUIView(_ uiView: EmojiUITextField, context: Context) {
+        DispatchQueue.main.async {
+            if isFirstResponder && !uiView.isFirstResponder {
+                uiView.becomeFirstResponder()
+            } else if !isFirstResponder && uiView.isFirstResponder {
+                uiView.resignFirstResponder()
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Choose Emoji")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+        }
+    }
+
+    class EmojiUITextField: UITextField {
+        override var textInputMode: UITextInputMode? {
+            .activeInputModes.first { $0.primaryLanguage == "emoji" }
+        }
+    }
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        let parent: EmojiTextField
+        init(_ parent: EmojiTextField) { self.parent = parent }
+
+        @objc func textChanged(_ sender: UITextField) {
+            guard let last = sender.text?.last else { return }
+            parent.text = String(last)
+            sender.text = ""
+            sender.resignFirstResponder()
+            parent.isFirstResponder = false
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            parent.isFirstResponder = false
         }
     }
 }

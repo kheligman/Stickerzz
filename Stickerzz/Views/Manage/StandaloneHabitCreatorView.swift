@@ -11,7 +11,7 @@ struct StandaloneHabitCreatorView: View {
     @State private var frequency: FrequencyType = .daily
     @State private var targetCount: Int = 1
     @State private var scheduledWeekdays: Set<Int> = []
-    @State private var showEmojiPicker = false
+    @State private var emojiKeyboardActive = false
     @State private var reminderEnabled: Bool = false
     @State private var reminderTime: Date = Self.defaultReminderTime
     @State private var tags: Set<String> = []
@@ -33,7 +33,7 @@ struct StandaloneHabitCreatorView: View {
         NavigationStack {
             Form {
                 Section {
-                    Button { showEmojiPicker = true } label: {
+                    Button { emojiKeyboardActive = true } label: {
                         HStack {
                             Text("Emoji").foregroundStyle(.primary)
                             Spacer()
@@ -124,9 +124,10 @@ struct StandaloneHabitCreatorView: View {
                         )
                 }
             }
-            .sheet(isPresented: $showEmojiPicker) {
-                EmojiPickerView(selectedEmoji: $emoji)
-            }
+            .overlay(
+                EmojiTextField(text: $emoji, isFirstResponder: $emojiKeyboardActive)
+                    .frame(width: 0, height: 0)
+            )
         }
     }
 

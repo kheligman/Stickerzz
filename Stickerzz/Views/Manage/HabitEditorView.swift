@@ -15,7 +15,7 @@ struct HabitEditorView: View {
     @State private var isLuxe: Bool = false
     @State private var isRequired: Bool = true
     @State private var scheduledWeekdays: Set<Int> = []
-    @State private var showEmojiPicker = false
+    @State private var emojiKeyboardActive = false
     @State private var tags: Set<String> = []
     @State private var newTagText: String = ""
 
@@ -33,7 +33,7 @@ struct HabitEditorView: View {
                 // Emoji
                 Section {
                     Button {
-                        showEmojiPicker = true
+                        emojiKeyboardActive = true
                     } label: {
                         HStack {
                             Text("Emoji")
@@ -154,9 +154,10 @@ struct HabitEditorView: View {
                 }
             }
             .onAppear { loadExisting() }
-            .sheet(isPresented: $showEmojiPicker) {
-                EmojiPickerView(selectedEmoji: $emoji)
-            }
+            .overlay(
+                EmojiTextField(text: $emoji, isFirstResponder: $emojiKeyboardActive)
+                    .frame(width: 0, height: 0)
+            )
         }
     }
 
