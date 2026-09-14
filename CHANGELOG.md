@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.3] - 2026-09-14
+### Added
+- Tapping the Calendar or Today tab when already on it jumps back to today
+- "Today" button in Today toolbar appears whenever you're viewing a different date
+- Month calendar toggle between grouped routine emoji and individual habit emoji per cell
+
+### Changed
+- 7-day calendar now pages a full week at a time instead of one day
+- 3-day view now shows individual habit emoji + name instead of grouped by routine
+- Native system emoji keyboard replaces custom emoji picker grid
+
+### Fixed
+- 7-day calendar day columns no longer clip at the top
+
+---
+
 ## [1.0.2] - 2026-09-11
 ### Added
 - Day picker on Today tab — week strip with < > navigation + calendar icon for full date picker

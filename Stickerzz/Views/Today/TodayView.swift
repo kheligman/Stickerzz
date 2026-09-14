@@ -135,7 +135,7 @@ struct TodayView: View {
                 navigation.retappedTab = nil
             }
             .sheet(isPresented: $showSummary) {
-                DaySummarySheet()
+                DaySummarySheet(date: selectedDate)
             }
             .sheet(isPresented: $showDatePicker) {
                 NavigationStack {

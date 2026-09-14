@@ -32,5 +32,9 @@ struct RootTabView: View {
                 .tag(3)
         }
         .tint(.accent)
+        .onChange(of: nav.retappedTab) { _, tab in
+            guard let tab, tab != 0, tab != 1 else { return }
+            nav.retappedTab = nil
+        }
     }
 }

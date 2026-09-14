@@ -96,6 +96,7 @@ struct CalendarView: View {
                         completions: completions,
                         filter: filter,
                         groups: groups,
+                        compress: compressCalendar,
                         selectedDay: $selectedDay,
                         page: $sevenDayPage
                     )
@@ -104,7 +105,6 @@ struct CalendarView: View {
                     ThreeDayView(
                         completions: completions,
                         filter: filter,
-                        groups: groups,
                         selectedDay: $selectedDay,
                         page: $threeDayPage
                     )

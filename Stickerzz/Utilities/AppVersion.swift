@@ -1,9 +1,9 @@
 enum AppVersion {
-    static let current = "1.1.0"
-    static let build   = "2"
+    static let current = "1.0.3"
+    static let build   = "3"
 
     static let releaseNotes = """
-    Day picker, completed items sink to bottom, day summary share card, \
-    tags, MVP habits, calendar redesign.
+    Native emoji keyboard, 7-day weekly paging, 3-day individual habits, \
+    tab re-tap jumps to today, calendar emoji toggle, clipping fix.
     """
 }

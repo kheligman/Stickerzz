@@ -4,7 +4,6 @@ import SwiftData
 struct ThreeDayView: View {
     let completions: [HabitCompletion]
     let filter: CalendarFilter
-    let groups: [HabitGroup]
     @Binding var selectedDay: Date?
     @Binding var page: Int
 
@@ -24,7 +23,6 @@ struct ThreeDayView: View {
                     centerDate: centerDate(for: p),
                     completions: completions,
                     filter: filter,
-                    groups: groups,
                     selectedDay: $selectedDay
                 )
                 .tag(p)
@@ -41,7 +39,6 @@ private struct ThreeDayPage: View {
     let centerDate: Date
     let completions: [HabitCompletion]
     let filter: CalendarFilter
-    let groups: [HabitGroup]
     @Binding var selectedDay: Date?
 
     private var days: [Date] {

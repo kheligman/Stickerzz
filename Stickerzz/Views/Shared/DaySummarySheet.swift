@@ -2,32 +2,32 @@ import SwiftUI
 import SwiftData
 
 struct DaySummarySheet: View {
+    var date: Date = Calendar.current.startOfDay(for: .now)
+
     @Query(sort: \HabitGroup.sortOrder) private var groups: [HabitGroup]
     @Environment(\.dismiss) private var dismiss
 
-    private let today = Calendar.current.startOfDay(for: .now)
-
     private var completedRoutines: [HabitGroup] {
         groups.filter { !$0.isStandalone }.filter { group in
-            group.sortedHabits.contains { !$0.isLuxe && $0.isCompleted(on: today) }
+            group.sortedHabits.contains { !$0.isLuxe && $0.isCompleted(on: date) }
         }
     }
 
     private var completedStandalones: [Habit] {
         groups.filter { $0.isStandalone }
             .compactMap { $0.sortedHabits.first }
-            .filter { $0.isCompleted(on: today) }
+            .filter { $0.isCompleted(on: date) }
     }
 
     private var completedLuxe: [Habit] {
-        groups.flatMap { $0.sortedHabits }.filter { $0.isLuxe && $0.isCompleted(on: today) }
+        groups.flatMap { $0.sortedHabits }.filter { $0.isLuxe && $0.isCompleted(on: date) }
     }
 
     private var hasPerfectDay: Bool {
         let allScheduled = groups.flatMap { $0.sortedHabits }
-            .filter { !$0.isLuxe && $0.isOnSchedule(on: today) }
+            .filter { !$0.isLuxe && $0.isOnSchedule(on: date) }
         guard !allScheduled.isEmpty else { return false }
-        return allScheduled.allSatisfy { $0.isCompleted(on: today) }
+        return allScheduled.allSatisfy { $0.isCompleted(on: date) }
     }
 
     private var topStreak: (Habit, Int)? {
@@ -42,6 +42,7 @@ struct DaySummarySheet: View {
         NavigationStack {
             ScrollView {
                 DaySummaryCard(
+                    date: date,
                     completedRoutines: completedRoutines,
                     completedStandalones: completedStandalones,
                     completedLuxe: completedLuxe,
@@ -65,13 +66,12 @@ struct DaySummarySheet: View {
 // MARK: - Card
 
 struct DaySummaryCard: View {
+    let date: Date
     let completedRoutines: [HabitGroup]
     let completedStandalones: [Habit]
     let completedLuxe: [Habit]
     let hasPerfectDay: Bool
     let topStreak: (Habit, Int)?
-
-    private let today = Calendar.current.startOfDay(for: .now)
 
     private var hasCompletions: Bool {
         !completedRoutines.isEmpty || !completedStandalones.isEmpty
@@ -88,7 +88,7 @@ struct DaySummaryCard: View {
         VStack(alignment: .leading, spacing: 0) {
             // Date + headline
             VStack(alignment: .leading, spacing: 6) {
-                Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day())
+                Text(date, format: .dateTime.weekday(.wide).month(.wide).day())
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.accent.opacity(0.6))
                 Text(headline)
@@ -153,9 +153,9 @@ struct DaySummaryCard: View {
     }
 
     private func routineSection(_ group: HabitGroup) -> some View {
-        let doneHabits = group.sortedHabits.filter { !$0.isLuxe && $0.isCompleted(on: today) }
-        let required = group.sortedHabits.filter { !$0.isLuxe && $0.isRequired && $0.isOnSchedule(on: today) }
-        let isPerfect = !required.isEmpty && required.allSatisfy { $0.isCompleted(on: today) }
+        let doneHabits = group.sortedHabits.filter { !$0.isLuxe && $0.isCompleted(on: date) }
+        let required = group.sortedHabits.filter { !$0.isLuxe && $0.isRequired && $0.isOnSchedule(on: date) }
+        let isPerfect = !required.isEmpty && required.allSatisfy { $0.isCompleted(on: date) }
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {

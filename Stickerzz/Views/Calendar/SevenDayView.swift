@@ -5,6 +5,7 @@ struct SevenDayView: View {
     let completions: [HabitCompletion]
     let filter: CalendarFilter
     let groups: [HabitGroup]
+    let compress: Bool
     @Binding var selectedDay: Date?
     @Binding var page: Int
 
@@ -25,6 +26,7 @@ struct SevenDayView: View {
                     completions: completions,
                     filter: filter,
                     groups: groups,
+                    compress: compress,
                     selectedDay: $selectedDay
                 )
                 .tag(p)
@@ -41,6 +43,7 @@ private struct SevenDayPage: View {
     let completions: [HabitCompletion]
     let filter: CalendarFilter
     let groups: [HabitGroup]
+    let compress: Bool
     @Binding var selectedDay: Date?
 
     private var days: [Date] {
@@ -68,7 +71,7 @@ private struct SevenDayPage: View {
     private func emojis(for date: Date) -> [String] {
         let day = Calendar.current.startOfDay(for: date)
 
-        if case .all = filter {
+        if case .all = filter, compress {
             var result: [String] = []
             for group in groups {
                 let hasCompletion = completions.contains { c in
